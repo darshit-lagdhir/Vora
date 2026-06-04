@@ -1,0 +1,46 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Render.com Infrastructure-as-Code Blueprint — Project VORA Backend
+# https://render.com/docs/blueprint-spec
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Deploy: Connect this repository to Render and it will auto-detect this file.
+# The backend runs as a headless API service on a dedicated container,
+# structurally isolated from the frontend CDN deployment.
+
+services:
+  - type: web
+    name: vora-api
+    runtime: node
+    region: oregon
+
+    # ─── Build Configuration ──────────────────────────────────────────────
+    # Install production dependencies only (omit devDependencies)
+    buildCommand: npm ci --omit=dev
+
+    # ─── Start Command ───────────────────────────────────────────────────
+    startCommand: node vora-backend/src/index.js
+
+    # ─── Health Check ────────────────────────────────────────────────────
+    # Render pings this endpoint every 30 seconds.
+    # If 3 consecutive checks fail, the container is destroyed and rebuilt.
+    healthCheckPath: /health
+
+    # ─── Auto-Deploy ─────────────────────────────────────────────────────
+    autoDeploy: true
+
+    # ─── Node.js Version ─────────────────────────────────────────────────
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+
+      # Secrets: set these in the Render dashboard (never commit values)
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false

@@ -1,0 +1,39 @@
+name: Vora Full-Stack CI Pipeline
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  verify:
+    name: Build & Verify (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [ 20.x ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Backend syntax verification
+        run: |
+          node --check vora-backend/src/index.js
+          node --check vora-backend/src/app.js
+          node --check vora-backend/src/config/env.js
+          node --check vora-backend/src/middleware/errorHandler.js
+
+      - name: Build frontend production assets
+        run: npm run build
