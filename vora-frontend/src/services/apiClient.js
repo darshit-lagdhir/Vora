@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create a custom Axios instance pointing to the Express backend API server
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  baseURL: import.meta.env.VITE_API_URL || '',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

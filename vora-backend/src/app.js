@@ -190,6 +190,21 @@ app.use('/api/v1/explore', exploreRouter);
 app.use('/api/v1/registrations', registrationRouter);
 app.use('/api/v1/resources', resourceRouter);
 
+// ─── Co-hosting Frontend Static Assets ───────────────────────────────────────
+const frontendDistPath = path.resolve(__dirname, '../../vora-frontend/dist');
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+  console.log(`[Static] Serving frontend production assets from: ${frontendDistPath}`);
+
+  // Wildcard fallback for React Router SPA routes
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/v1') || req.path.startsWith('/health')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // 8. CENTRALIZED ERROR HANDLER — Must be placed at the absolute end
 // ═══════════════════════════════════════════════════════════════════════════════

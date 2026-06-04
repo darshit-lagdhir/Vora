@@ -4,7 +4,11 @@
   "description": "Unified package configuration for Project Vora (EDUPFSD072)",
   "type": "module",
   "scripts": {
-    "start": "node vora-backend/src/index.js",
+    "prestart": "node vora-backend/src/scripts/killPort.js",
+    "start": "npm run build && node vora-backend/src/index.js",
+    "predev:single": "node vora-backend/src/scripts/killPort.js",
+    "dev:single": "npm run build && node vora-backend/src/index.js",
+    "predev:backend": "node vora-backend/src/scripts/killPort.js",
     "dev:backend": "nodemon vora-backend/src/index.js",
     "dev:frontend": "vite vora-frontend",
     "build": "vite build vora-frontend",
