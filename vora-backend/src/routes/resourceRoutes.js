@@ -1,6 +1,9 @@
 import express from 'express';
 import multer from 'multer';
-import { authenticate, authorize } from '../middleware/authMiddleware.js';
+import { authenticate } from '../middleware/authMiddleware.js';
+import { roleMiddleware } from '../middleware/roleMiddleware.js';
+import { validate } from '../middleware/validation.js';
+import { uploadResourceBodySchema } from '../utils/schemas.js';
 import {
   uploadResource,
   listEventResources,
@@ -25,11 +28,13 @@ const upload = multer({
 // ─── Protected Organizer Routes ──────────────────────────────────────────────
 
 // POST /api/v1/resources — Upload a new resource asset (Organizer only)
+// Note: validation runs AFTER multer parses multipart form data
 router.post(
   '/',
   authenticate,
-  authorize(['organizer']),
+  roleMiddleware(['organizer']),
   upload.single('file'),
+  validate(uploadResourceBodySchema),
   uploadResource
 );
 
@@ -37,7 +42,7 @@ router.post(
 router.delete(
   '/:id',
   authenticate,
-  authorize(['organizer']),
+  roleMiddleware(['organizer']),
   deleteResource
 );
 

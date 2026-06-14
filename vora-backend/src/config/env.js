@@ -36,6 +36,7 @@ const config = {
   DATABASE_URL: process.env.DATABASE_URL,
   JWT_SECRET: process.env.JWT_SECRET,
   CORS_ORIGINS: process.env.CORS_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173',
+  REDIS_URL: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
 };
 
 // Freeze the object to prevent runtime modification

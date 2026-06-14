@@ -77,7 +77,10 @@ export const createSession = asyncHandler(async (req, res, next) => {
   }
 
   // Fetch parent event metadata (Task 3)
-  const eventResult = await pool.query('SELECT * FROM events WHERE id = $1', [eventId]);
+  const eventResult = await pool.query(
+    'SELECT organizer_id, start_timestamp, end_timestamp FROM events WHERE id = $1',
+    [eventId]
+  );
   if (eventResult.rows.length === 0) {
     const error = new Error('Parent event resource not found.');
     error.statusCode = 404;
@@ -259,7 +262,10 @@ export const updateSession = asyncHandler(async (req, res, next) => {
 
   const existingSession = sessionResult.rows[0];
 
-  const eventResult = await pool.query('SELECT * FROM events WHERE id = $1', [eventId]);
+  const eventResult = await pool.query(
+    'SELECT organizer_id, start_timestamp, end_timestamp FROM events WHERE id = $1',
+    [eventId]
+  );
   const parentEvent = eventResult.rows[0];
 
   // Organizer ownership verification

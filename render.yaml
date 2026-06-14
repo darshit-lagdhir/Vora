@@ -31,11 +31,11 @@ services:
     # ─── Node.js Version ─────────────────────────────────────────────────
     envVars:
       - key: NODE_VERSION
-        value: "20"
+        value: '20'
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: "10000"
+        value: '10000'
 
       # Secrets: set these in the Render dashboard (never commit values)
       - key: DATABASE_URL

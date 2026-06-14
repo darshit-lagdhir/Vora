@@ -1,0 +1,29 @@
+# Ignore all frontend files except files we explicitly modified/created
+vora-frontend/src/**/*
+!vora-frontend/src/utils/checkoutUtils.js
+!vora-frontend/src/services/telemetry.js
+!vora-frontend/src/components/ui/SEOMatrix.jsx
+!vora-frontend/src/components/ui/ProgressiveImage.jsx
+!vora-frontend/src/components/ui/Skeleton.jsx
+!vora-frontend/src/components/VoraModal.jsx
+!vora-frontend/src/components/DiscoveryMatrix.jsx
+!vora-frontend/src/pages/public/EventDetail.jsx
+!vora-frontend/src/pages/attendee/CheckoutFunnel.jsx
+
+# Ignore all backend files except files we explicitly modified/created
+vora-backend/src/**/*
+!vora-backend/src/app.js
+!vora-backend/src/middleware/errorHandler.js
+!vora-backend/src/services/telemetryService.js
+!vora-backend/src/tests/auth.test.js
+
+# Ignore other node, system and lock configurations
+node_modules
+dist
+uploads
+.kilo
+.gemini
+package-lock.json
+postcss.config.js
+tailwind.config.js
+vite.config.js

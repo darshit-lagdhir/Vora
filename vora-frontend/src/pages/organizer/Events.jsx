@@ -16,8 +16,11 @@ import {
   Minus
 } from 'lucide-react';
 import apiClient from '../../services/apiClient.js';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const Events = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
   // Primary State Registry
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -90,7 +93,8 @@ const Events = () => {
         if (res?.data?.success) {
           setEvents(res.data.data);
           if (res.data.data.length > 0) {
-            setSelectedEvent(res.data.data[0]);
+            const matched = id ? res.data.data.find(e => e.id === id) : null;
+            setSelectedEvent(matched || res.data.data[0]);
           }
         }
       } catch (err) {
@@ -181,8 +185,8 @@ const Events = () => {
 
   // Filter Parent Events based on Search/Status selectors
   const filteredEvents = events.filter(e => {
-    const matchesSearch = e.title?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'All Statuses' || e.status === statusFilter.toLowerCase();
+    const matchesSearch = e.title?.toLowerCase().includes((searchTerm || '').toLowerCase());
+    const matchesStatus = statusFilter === 'All Statuses' || e.status === (statusFilter || '').toLowerCase();
     return matchesSearch && matchesStatus;
   });
 
@@ -449,11 +453,11 @@ const Events = () => {
 
   // Filter lists for searchable select boxes (Task 6)
   const filteredSpeakers = profiles.filter(p => 
-    `${p.first_name} ${p.last_name}`.toLowerCase().includes(speakerSearch.toLowerCase())
+    `${p?.first_name || ''} ${p?.last_name || ''}`.toLowerCase().includes((speakerSearch || '').toLowerCase())
   );
 
   const filteredTracks = uniqueTracks.filter(t => 
-    t.toLowerCase().includes(trackSearch.toLowerCase())
+    (t || '').toLowerCase().includes((trackSearch || '').toLowerCase())
   );
 
   const activeSpeakerProfile = profiles.find(p => p.id === formSpeaker);
@@ -639,18 +643,30 @@ const Events = () => {
           {loadingEvents ? (
             <div className="h-9 w-48 bg-brand-dark/50 border border-brand-card animate-pulse rounded-xl"></div>
           ) : (
-            <select 
-              value={selectedEvent ? selectedEvent.id : ''}
-              onChange={(e) => {
-                const ev = events.find(o => o.id === e.target.value);
-                setSelectedEvent(ev);
-              }}
-              className="bg-brand-dark border border-brand-card text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-accent-violet transition min-w-[200px] max-w-sm truncate"
-            >
-              {events.map((ev) => (
-                <option key={ev.id} value={ev.id}>{ev.title}</option>
-              ))}
-            </select>
+            <div className="flex items-center space-x-2 shrink-0">
+              <select 
+                value={selectedEvent ? selectedEvent.id : ''}
+                onChange={(e) => {
+                  const ev = events.find(o => o.id === e.target.value);
+                  setSelectedEvent(ev);
+                }}
+                className="bg-brand-dark border border-brand-card text-white text-sm rounded-xl px-4 py-2 focus:outline-none focus:border-accent-violet transition min-w-[200px] max-w-sm truncate"
+              >
+                {events.map((ev) => (
+                  <option key={ev.id} value={ev.id}>{ev.title}</option>
+                ))}
+              </select>
+
+              {selectedEvent && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/organizer/events/${selectedEvent.id}`)}
+                  className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-850 hover:text-white text-zinc-400 text-xs font-semibold rounded-xl transition duration-200 shadow-md outline-none shrink-0"
+                >
+                  Command Center
+                </button>
+              )}
+            </div>
           )}
         </div>
 

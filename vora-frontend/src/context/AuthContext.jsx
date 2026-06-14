@@ -5,6 +5,23 @@ import apiClient from '../services/apiClient.js';
 const AuthContext = createContext(undefined);
 
 /**
+ * Helper to normalize and unify user profile keys on the frontend.
+ * Ensures both camelCase and snake_case copies of names and role contexts exist.
+ */
+const formatUser = (userData) => {
+  if (!userData) return null;
+  return {
+    ...userData,
+    role: userData.role || userData.platform_role,
+    platform_role: userData.platform_role || userData.role,
+    firstName: userData.firstName || userData.first_name,
+    first_name: userData.first_name || userData.firstName,
+    lastName: userData.lastName || userData.last_name,
+    last_name: userData.last_name || userData.lastName,
+  };
+};
+
+/**
  * Authentication Context Provider Component.
  * Encapsulates application tree and broadcasts the user profile, session state, and auth actions.
  */
@@ -21,10 +38,11 @@ export const AuthProvider = ({ children }) => {
         if (token) {
           // Attempt to hydrate user profile directly from backend database
           const response = await apiClient.get('/api/v1/auth/me');
-          const userData = response.data?.user || response.data;
+          const dataObj = response.data?.data || response.data;
+          const userData = dataObj?.user || dataObj;
           
           setSession(token);
-          setUser(userData);
+          setUser(formatUser(userData));
         }
       } catch (err) {
         console.error('[Auth Context] Failed to hydrate initial authentication session:', err);
@@ -51,11 +69,12 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await apiClient.post('/api/v1/auth/login', { email, password });
-      const { token, user: userData } = response.data;
+      const dataObj = response.data?.data || response.data;
+      const { user: userData } = dataObj;
       
-      localStorage.setItem('token', token);
-      setSession(token);
-      setUser(userData);
+      localStorage.setItem('token', 'true');
+      setSession('true');
+      setUser(formatUser(userData));
       return response.data;
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || 'Login failed';
@@ -72,15 +91,16 @@ export const AuthProvider = ({ children }) => {
       const response = await apiClient.post('/api/v1/auth/register', {
         email,
         password,
-        firstName,
-        lastName,
-        role,
+        first_name: firstName,
+        last_name: lastName,
+        platform_role: role,
       });
-      const { token, user: userData } = response.data;
+      const dataObj = response.data?.data || response.data;
+      const { user: userData } = dataObj;
       
-      localStorage.setItem('token', token);
-      setSession(token);
-      setUser(userData);
+      localStorage.setItem('token', 'true');
+      setSession('true');
+      setUser(formatUser(userData));
       return response.data;
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || 'Registration failed';
@@ -101,12 +121,22 @@ export const AuthProvider = ({ children }) => {
     } finally {
       try {
         localStorage.removeItem('token');
+        localStorage.removeItem('vora_jwt_token');
       } catch (storageErr) {
         console.error('[Auth Context] Local storage cleanup failed:', storageErr);
       }
       setUser(null);
       setSession(null);
     }
+  };
+
+  const setUserData = (userData, newToken = null) => {
+    if (newToken) {
+      localStorage.setItem('token', 'true');
+      localStorage.setItem('vora_jwt_token', 'true');
+      setSession('true');
+    }
+    setUser(formatUser(userData));
   };
 
   const contextValue = {
@@ -116,6 +146,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    setUserData,
   };
 
   return (

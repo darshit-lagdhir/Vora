@@ -2,6 +2,8 @@ import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
 import env from '../config/env.js';
 import asyncHandler from '../utils/asyncHandler.js';
+import { verifyLockdown } from '../services/securityService.js';
+import { als } from '../utils/als.js';
 
 /**
  * Authentication Middleware
@@ -10,26 +12,31 @@ import asyncHandler from '../utils/asyncHandler.js';
  * directly from the database profiles table.
  */
 export const authenticate = asyncHandler(async (req, res, next) => {
-  const authHeader = req.headers.authorization;
+  // Extract access token from cookies
+  const token = req.cookies?.accessToken;
 
-  // Verify the presence and structure of the Authorization header
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    const error = new Error('Authorization credentials are required.');
+  // Verify the presence of the cookie
+  if (!token) {
+    const error = new Error('Authentication credentials are required.');
     error.statusCode = 401;
     return next(error);
   }
-
-  // Deconstruct Bearer prefix to isolate token payload
-  const token = authHeader.split(' ')[1];
 
   try {
     // Verify cryptographic signature and expiration
     const decoded = jwt.verify(token, env.JWT_SECRET);
     const userId = decoded.sub; // Extract subject UUID claim
 
+    // Check Defcon lockdown status
+    if (verifyLockdown(userId, decoded.iat)) {
+      const error = new Error('Your session has been terminated by an administrator lockdown.');
+      error.statusCode = 401;
+      return next(error);
+    }
+
     // Hydrate user profile from PostgreSQL profiles table
     const result = await pool.query(
-      'SELECT id, email_address, first_name, last_name, platform_role FROM profiles WHERE id = $1',
+      'SELECT id, email_address, first_name, last_name, platform_role, avatar_url, notify_event_start, notify_weekly_digest, notify_marketing FROM profiles WHERE id = $1',
       [userId]
     );
 
@@ -49,7 +56,16 @@ export const authenticate = asyncHandler(async (req, res, next) => {
       firstName: profile.first_name,
       lastName: profile.last_name,
       role: profile.platform_role, // 'attendee' or 'organizer'
+      avatarUrl: profile.avatar_url,
+      notifyEventStart: profile.notify_event_start,
+      notifyWeeklyDigest: profile.notify_weekly_digest,
+      notifyMarketing: profile.notify_marketing,
     };
+
+    const store = als.getStore();
+    if (store) {
+      store.userId = profile.id;
+    }
 
     next();
   } catch (err) {
@@ -97,20 +113,25 @@ export const authorize = (allowedRoles = []) => {
  * If no token is provided, lets the request pass through with req.user set to null.
  */
 export const optionalAuthenticate = asyncHandler(async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const token = req.cookies?.accessToken;
+
+  if (!token) {
     req.user = null;
     return next();
   }
-
-  const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(token, env.JWT_SECRET);
     const userId = decoded.sub;
 
+    // Check Defcon lockdown status
+    if (verifyLockdown(userId, decoded.iat)) {
+      req.user = null;
+      return next();
+    }
+
     const result = await pool.query(
-      'SELECT id, email_address, first_name, last_name, platform_role FROM profiles WHERE id = $1',
+      'SELECT id, email_address, first_name, last_name, platform_role, avatar_url, notify_event_start, notify_weekly_digest, notify_marketing FROM profiles WHERE id = $1',
       [userId]
     );
 
@@ -127,7 +148,16 @@ export const optionalAuthenticate = asyncHandler(async (req, res, next) => {
       firstName: profile.first_name,
       lastName: profile.last_name,
       role: profile.platform_role,
+      avatarUrl: profile.avatar_url,
+      notifyEventStart: profile.notify_event_start,
+      notifyWeeklyDigest: profile.notify_weekly_digest,
+      notifyMarketing: profile.notify_marketing,
     };
+
+    const store = als.getStore();
+    if (store) {
+      store.userId = profile.id;
+    }
 
     next();
   } catch (err) {

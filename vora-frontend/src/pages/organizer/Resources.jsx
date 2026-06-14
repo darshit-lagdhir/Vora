@@ -19,8 +19,11 @@ import {
   ExternalLink,
   Plus,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../services/apiClient.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import useOptimisticMutation from '../../hooks/useOptimisticMutation.js';
+import BentoMediaProxy from '../../components/BentoMediaProxy.jsx';
 
 // ─── Byte Size Formatting Utility ────────────────────────────────────────────
 /**
@@ -264,18 +267,21 @@ const Resources = ({ eventId: propEventId, viewMode: propViewMode }) => {
   };
 
   // ─── Delete Resource (Organizer Only) ────────────────────────────────────
+  const { mutate: deleteMutate } = useOptimisticMutation(
+    (id) => apiClient.delete(`/api/v1/resources/${id}`),
+    setResources
+  );
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      await apiClient.delete(`/api/v1/resources/${deleteTarget.id}`);
-      setResources((prev) => prev.filter((r) => r.id !== deleteTarget.id));
-      setDeleteTarget(null);
-    } catch (err) {
-      console.error('[Resources] Delete failed:', err);
-    } finally {
-      setDeleting(false);
-    }
+    const target = deleteTarget;
+    setDeleteTarget(null);
+
+    // Optimistically remove from active list
+    await deleteMutate(
+      (currentState) => currentState.filter((r) => r.id !== target.id),
+      target.id
+    );
   };
 
   // ─── Upload Resource (Organizer Only) ────────────────────────────────────
@@ -384,10 +390,7 @@ const Resources = ({ eventId: propEventId, viewMode: propViewMode }) => {
   return (
     <div className="resource-library-wrapper h-full flex flex-col overflow-hidden">
 
-      {/* ─── Inline Scoped Styles ───────────────────────────────────────── */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap');
-
         .resource-library-wrapper {
           --glass-bg: rgba(17, 24, 39, 0.4);
           --glass-blur: 24px;
@@ -646,10 +649,59 @@ const Resources = ({ eventId: propEventId, viewMode: propViewMode }) => {
             )}
 
             {/* ─── Resource Card Array ──────────────────────────────────── */}
-            {!loading &&
-              !error &&
-              filteredResources.map((resource) => (
-                <div key={resource.id} className="resource-card group/card relative">
+            {!loading && !error && (
+              <AnimatePresence mode="popLayout">
+                {filteredResources.map((resource) => {
+                  const isUrlResource = resource.file_url && (
+                    resource.file_url.startsWith('http') || 
+                    resource.file_url.startsWith('https')
+                  ) && (
+                    !resource.mime_type || 
+                    resource.mime_type === 'text/html' || 
+                    resource.file_url.includes('youtube.com') || 
+                    resource.file_url.includes('youtu.be') ||
+                    resource.file_url.includes('drive.google.com')
+                  );
+
+                  if (isUrlResource) {
+                    return (
+                      <motion.div 
+                        key={resource.id} 
+                        layout
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.25 }}
+                        className="relative group"
+                      >
+                        {isOrganizer && (
+                          <button
+                            onClick={() => setDeleteTarget(resource)}
+                            className="absolute top-4 right-4 z-20 w-8 h-8 rounded-lg bg-zinc-950/80 border border-white/5 flex items-center justify-center text-zinc-400 hover:text-red-400 hover:bg-zinc-900 transition-colors"
+                            title="Delete link resource"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        <BentoMediaProxy
+                          url={resource.file_url}
+                          title={resource.asset_name}
+                          mimeType={resource.mime_type}
+                        />
+                      </motion.div>
+                    );
+                  }
+
+                  return (
+                    <motion.div 
+                      key={resource.id}
+                      layout
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.25 }}
+                      className="resource-card group/card relative"
+                    >
                   <div className="flex items-start gap-4">
                     {/* File Type Icon Badge */}
                     <div className="file-type-badge mt-0.5">
@@ -709,8 +761,11 @@ const Resources = ({ eventId: propEventId, viewMode: propViewMode }) => {
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            )}
           </div>
         </div>
 

@@ -162,15 +162,7 @@ export const uploadResource = asyncHandler(async (req, res, next) => {
     return next(error);
   }
 
-  // Multer places the file on req.file (single upload)
-  const file = req.file;
-  if (!file) {
-    const error = new Error('No file attached: A file payload is required for resource upload.');
-    error.statusCode = 400;
-    return next(error);
-  }
-
-  const eventId = req.body.event_id;
+  const eventId = req.body.event_id || req.params.eventId;
   const visibilityClearance = req.body.visibility_clearance || 'public_accessible';
 
   // 1. Parameter validation
@@ -202,6 +194,43 @@ export const uploadResource = asyncHandler(async (req, res, next) => {
     const error = new Error('Authorization failure: You do not own this event.');
     error.statusCode = 403;
     return next(error);
+  }
+
+  // Check if it's a URL-only upload workflow
+  const file = req.file;
+  if (!file) {
+    const { title, url, type } = req.body;
+    if (!title || !url) {
+      const error = new Error('No file attached and no title/url provided.');
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    let mimeType = 'application/octet-stream';
+    if (type === 'Presentation Deck') mimeType = 'application/pdf';
+    else if (type === 'Video Recording') mimeType = 'video/mp4';
+    else if (type === 'External Article') mimeType = 'text/html';
+
+    const insertRes = await pool.query(
+      `INSERT INTO resources (event_id, uploader_id, asset_name, file_url, mime_type, file_size_bytes, visibility_clearance)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, event_id, uploader_id, asset_name, file_url, mime_type, file_size_bytes, visibility_clearance, download_count, created_at`,
+      [
+        eventId,
+        uploaderId,
+        title,
+        url,
+        mimeType,
+        0,
+        visibilityClearance,
+      ]
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Resource asset catalogued successfully.',
+      data: insertRes.rows[0],
+    });
   }
 
   // 3. Deep MIME inspection via magic-number byte signatures
@@ -327,7 +356,7 @@ export const listEventResources = asyncHandler(async (req, res, next) => {
   if (isOrganizer) {
     // Organizers see everything
     queryText = `
-      SELECT id, event_id, uploader_id, asset_name, mime_type, file_size_bytes,
+      SELECT id, event_id, uploader_id, asset_name, file_url, mime_type, file_size_bytes,
              visibility_clearance, download_count, created_at, updated_at
       FROM resources
       WHERE event_id = $1
@@ -337,7 +366,7 @@ export const listEventResources = asyncHandler(async (req, res, next) => {
   } else {
     // Attendees only see public or attendees_only resources
     queryText = `
-      SELECT id, event_id, asset_name, mime_type, file_size_bytes,
+      SELECT id, event_id, asset_name, file_url, mime_type, file_size_bytes,
              visibility_clearance, download_count, created_at
       FROM resources
       WHERE event_id = $1 AND visibility_clearance IN ('public_accessible', 'attendees_only')

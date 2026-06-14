@@ -1,5 +1,7 @@
+import './config/preflightGuard.js';
 import app from './app.js';
 import env from './config/env.js';
+import { startAnalyticsScheduler, stopAnalyticsScheduler } from './controllers/analyticsController.js';
 
 // Bind network listener to the specified port
 const server = app.listen(env.PORT, () => {
@@ -9,11 +11,13 @@ const server = app.listen(env.PORT, () => {
   console.log(`[Server] Listening on Port: ${env.PORT}`);
   console.log(`[Server] Uptime Telemetry Target URL: http://localhost:${env.PORT}/`);
   console.log('================================================================================');
+  startAnalyticsScheduler();
 });
 
 // Helper function to handle graceful shutdown
 const gracefulShutdown = (signal, error) => {
   console.warn(`[Server] Received ${signal}. Starting graceful shutdown procedure...`);
+  stopAnalyticsScheduler();
   
   if (error) {
     console.error('[Server] Critical Error Details:');

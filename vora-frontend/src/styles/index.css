@@ -2,14 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Panchang';
+  src: url('/fonts/Panchang-Semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Panchang';
+  src: url('/fonts/Panchang-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Panchang';
+  src: url('/fonts/Panchang-Extrabold.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Syne';
+  src: url('/fonts/Syne-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Syne';
+  src: url('/fonts/Syne-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Basement';
+  src: url('/fonts/Basement.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Boska';
+  src: url('/fonts/Boska-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Boska';
+  src: url('/fonts/Boska-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Le Murmure';
+  src: url('/fonts/le-murmure.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+
 @layer base {
   html {
-    scroll-behavior: smooth;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    text-rendering: optimizeLegibility;
   }
-  
+
+  html, body {
+    background-color: theme('colors.zinc.950');
+    color: theme('colors.zinc.200');
+    font-family: 'Syne', sans-serif;
+  }
+
   body {
-    @apply bg-brand-dark text-slate-100 antialiased;
     margin: 0;
     padding: 0;
     min-height: 100vh;
@@ -18,17 +96,83 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Custom scrollbar to blend in with the dark slate theme */
+  ::selection {
+    background-color: theme('colors.primary.500 / 20%');
+    color: white;
+  }
+
+  /* Custom subtle scrollbar matching zinc theme */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-brand-dark;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-brand-slate rounded-sm border border-brand-dark hover:bg-brand-card;
+    background: theme('colors.zinc.800');
+    border-radius: 9px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: theme('colors.zinc.700');
+  }
+
+  *:focus-visible {
+    outline: 2px solid #7c3aed !important;
+    outline-offset: 2px !important;
+  }
+
+  /* Override Tailwind utility font families to support fallback stacks */
+  .font-sans {
+    font-family: 'Syne', sans-serif !important;
+  }
+  .font-display {
+    font-family: 'Panchang', sans-serif !important;
+  }
+  .font-brutalist {
+    font-family: 'Basement', monospace !important;
+  }
+  .font-art {
+    font-family: 'Syne', sans-serif !important;
+  }
+  .font-elegant {
+    font-family: 'Boska', serif !important;
+  }
+  .font-murmure {
+    font-family: 'Le Murmure', sans-serif !important;
+  }
+  .font-technical {
+    font-family: 'Basement', monospace !important;
+  }
+  .font-accent {
+    font-family: 'Panchang', sans-serif !important;
+  }
+  .font-form {
+    font-family: 'Syne', sans-serif !important;
+  }
+  .font-clean-sans {
+    font-family: 'Satoshi', 'Inter', system-ui, -apple-system, sans-serif !important;
+  }
+}
+
+@layer utilities {
+  .soft-glass {
+    background-color: rgba(24, 24, 27, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top-color: rgba(255, 255, 255, 0.18);
+    box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  }
+
+  .neon-diffuse {
+    box-shadow: 0 0 60px -15px rgba(139, 92, 246, 0.4);
+  }
+
+  .focus-neon-diffuse:focus {
+    box-shadow: 0 0 60px -15px rgba(139, 92, 246, 0.4) !important;
   }
 }

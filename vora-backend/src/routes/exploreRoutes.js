@@ -1,25 +1,19 @@
 import express from 'express';
-import rateLimit from 'express-rate-limit';
+import { validate } from '../middleware/validation.js';
+import { exploreQuerySchema } from '../utils/schemas.js';
 import { exploreEvents } from '../controllers/exploreController.js';
-
-import env from '../config/env.js';
+import { cacheRoute } from '../middleware/cacheMiddleware.js';
+import { rateLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
-// Public Rate Limiter: 30 requests per minute per IP address in production, relaxed in development
-const exploreRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: env.NODE_ENV === 'production' ? 30 : 1000, // Limit each IP per window
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    status: 429,
-    message: 'Too many search queries. Please wait a minute before searching again.'
-  }
+const readLimiter = rateLimiter({
+  limit: 100,
+  windowMs: 60 * 1000,
+  profileName: 'public_read'
 });
 
 // GET /api/v1/explore/events
-router.get('/events', exploreRateLimiter, exploreEvents);
+router.get('/events', readLimiter, validate(exploreQuerySchema, 'query'), cacheRoute(60, 'events'), exploreEvents);
 
 export default router;

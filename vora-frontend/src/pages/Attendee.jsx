@@ -1,18 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Compass, 
-  BookOpen, 
   Calendar, 
-  Search, 
   MapPin, 
   Clock, 
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
   User,
   CheckCircle,
-  AlertCircle,
   X,
   CreditCard,
   Download,
@@ -20,29 +14,16 @@ import {
 } from 'lucide-react';
 import apiClient from '../services/apiClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import DiscoveryMatrix from '../components/DiscoveryMatrix.jsx';
+import VoraModal from '../components/VoraModal.jsx';
 
 const Attendee = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  
-  // URL parameters synchronization
-  const searchParam = searchParams.get('search') || '';
-  const tagsParam = searchParams.get('tags') || '';
-  const pageParam = parseInt(searchParams.get('page'), 10) || 1;
-  const activeTags = tagsParam ? tagsParam.split(',').filter(Boolean) : [];
-
-  // Local Search Input
-  const [searchInput, setSearchInput] = useState(searchParam);
   
   // Layout and Navigation
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // API Data list
-  const [events, setEvents] = useState([]);
-  const [meta, setMeta] = useState({ total_pages: 1, total_items: 0, current_page: 1, limit: 9 });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // Checkout Modal states
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -60,11 +41,6 @@ const Attendee = () => {
       return [];
     }
   });
-
-  const availableTags = [
-    'React', 'Quantum', 'Kubernetes', 'Cybersecurity', 'Database',
-    'Microservices', 'API Design', 'DevOps', 'Machine Learning', 'Serverless'
-  ];
 
   // Sync registrations list
   useEffect(() => {
@@ -88,57 +64,6 @@ const Attendee = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Search Debouncer (400ms delay)
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      setSearchParams(prev => {
-        const next = new URLSearchParams(prev);
-        if (searchInput.trim()) {
-          next.set('search', searchInput);
-        } else {
-          next.delete('search');
-        }
-        next.set('page', '1');
-        return next;
-      });
-    }, 400);
-
-    return () => clearTimeout(delayDebounce);
-  }, [searchInput, setSearchParams]);
-
-  // Sync search parameter externally
-  useEffect(() => {
-    setSearchInput(searchParam);
-  }, [searchParam]);
-
-  // Fetch events list
-  useEffect(() => {
-    const fetchEvents = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const queryParams = {
-          page: pageParam,
-          limit: 9,
-          search: searchParam,
-          tags: tagsParam
-        };
-        const res = await apiClient.get('/api/v1/explore/events', { params: queryParams });
-        if (res?.data?.success) {
-          setEvents(res.data.data);
-          setMeta(res.data.meta);
-        }
-      } catch (err) {
-        console.error('[Explore] Data fetch failed:', err);
-        setError(err.response?.data?.message || 'Error connecting to the discovery engine.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvents();
-  }, [searchParam, tagsParam, pageParam]);
-
   // Scroll freeze hook when checkout modal is active
   useEffect(() => {
     if (isCheckoutOpen) {
@@ -151,50 +76,13 @@ const Attendee = () => {
     };
   }, [isCheckoutOpen]);
 
-  // Toggle taxonomy filters
-  const handleToggleTag = (tag) => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      let updatedTags = [...activeTags];
-      
-      if (updatedTags.includes(tag)) {
-        updatedTags = updatedTags.filter(t => t !== tag);
-      } else {
-        updatedTags.push(tag);
-      }
-
-      if (updatedTags.length > 0) {
-        next.set('tags', updatedTags.join(','));
-      } else {
-        next.delete('tags');
-      }
-      next.set('page', '1');
-      return next;
-    });
-  };
-
-  // Pagination change
-  const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > meta.total_pages) return;
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      next.set('page', newPage.toString());
-      return next;
-    });
-    const anchor = document.getElementById('explore-anchor');
-    if (anchor) anchor.scrollIntoView({ behavior: 'smooth' });
-  };
-
   // Trigger checkout flow (requires authenticated user)
   const handleOpenCheckout = (event) => {
     if (!user) {
-      window.location.href = `/auth?redirect=/explore`;
+      navigate('/auth?redirect=/attendee');
       return;
     }
-    setCheckoutEvent(event);
-    setCheckoutError(null);
-    setConfirmedTicket(null);
-    setIsCheckoutOpen(true);
+    navigate(`/checkout/${event.id}`);
   };
 
   // Submit transactional registration checkout
@@ -219,20 +107,6 @@ const Attendee = () => {
         const ticketData = res.data.data;
         setConfirmedTicket(ticketData);
         setRegisteredEventIds(prev => [...prev, checkoutEvent.id]);
-        
-        // Refresh local listings for capacity counters updates
-        const updatedList = events.map(e => {
-          if (e.id === checkoutEvent.id) {
-            const currentCount = e.confirmed_attendees || 0;
-            return {
-              ...e,
-              confirmed_attendees: currentCount + 1,
-              is_sold_out: currentCount + 1 >= e.maximum_capacity
-            };
-          }
-          return e;
-        });
-        setEvents(updatedList);
       }
     } catch (err) {
       console.error('[Checkout] Registration transactional failed:', err);
@@ -289,59 +163,72 @@ const Attendee = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#02040a] text-slate-100 flex flex-col font-sans relative overflow-x-hidden">
+    <div className="min-h-screen bg-zinc-950 text-slate-100 flex flex-col font-sans relative overflow-x-hidden">
+      
+      {/* Ambient Illumination Spotlight Overlay */}
+      <div 
+        className="absolute top-0 left-0 right-0 h-[55vh] pointer-events-none select-none z-0"
+        style={{
+          background: 'radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.08) 0%, rgba(99, 102, 241, 0.03) 40%, rgba(9, 9, 11, 0) 70%)'
+        }}
+      />
       
       {/* CSS Stylesheet overrides for modal transitions, custom notches, and print frames */}
       <style>{`
         .glass-navbar {
-          background: rgba(3, 7, 18, 0.4);
+          background: rgba(9, 9, 11, 0.4);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
           border-bottom: 1px solid rgba(255, 255, 255, 0.05);
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .glass-navbar.scrolled {
-          background: #030712;
+          background: #09090b;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .hero-banner {
-          background: radial-gradient(circle at top, rgba(99, 102, 241, 0.12) 0%, rgba(3, 7, 18, 0) 60%), #030712;
-        }
         .search-matrix {
-          background: rgba(255, 255, 255, 0.03);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(24, 24, 27, 0.4);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.06);
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .search-matrix:focus-within {
-          border-color: #06b6d4;
-          box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.15), 0 10px 30px -10px rgba(6, 182, 212, 0.2);
+          border-color: rgba(124, 58, 237, 0.4);
+          box-shadow: 0 0 20px rgba(124, 58, 237, 0.15), 0 10px 30px -10px rgba(124, 58, 237, 0.2);
         }
         .carousel-scrollbar::-webkit-scrollbar {
           height: 0px;
         }
         .event-card {
-          background: rgba(255, 255, 255, 0.02);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          background: rgba(24, 24, 27, 0.4);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
           border: 1px solid rgba(255, 255, 255, 0.05);
-          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .event-card:not(.sold-out-lock):hover {
-          transform: translateY(-8px);
-          border-color: rgba(99, 102, 241, 0.5);
-          box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.25);
+        .event-card:hover {
+          transform: translateY(-4px);
+          border-color: rgba(124, 58, 237, 0.3);
+          box-shadow: 0 30px 60px -15px rgba(124, 58, 237, 0.15), 0 0 50px -10px rgba(0, 0, 0, 0.5);
         }
-        .event-card:not(.sold-out-lock):hover .banner-img {
-          transform: scale(1.05);
+        .event-card:hover .procedural-bg {
+          filter: saturate(1.3) brightness(1.05);
+        }
+        .event-card:hover .arrow-button {
+          background-color: #7c3aed !important;
+          border-color: #7c3aed !important;
+          color: #ffffff !important;
+        }
+        .event-card:hover .arrow-icon {
+          transform: translateX(2.5px);
         }
         .sold-out-lock {
           opacity: 0.6;
           pointer-events: none;
         }
         .shimmer-bg {
-          background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
+          background: linear-gradient(90deg, rgba(255, 255, 255, 0.02) 25%, rgba(255, 255, 255, 0.06) 50%, rgba(255, 255, 255, 0.02) 75%);
           background-size: 200% 100%;
           animation: shimmer 1.5s infinite;
         }
@@ -431,18 +318,21 @@ const Attendee = () => {
       <header className={`fixed top-0 left-0 right-0 z-50 px-6 py-4 glass-navbar ${isScrolled ? 'scrolled' : ''}`}>
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           
-          <div className="flex items-center space-x-2">
+          <Link to="/attendee" className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-accent-violet to-accent-blue flex items-center justify-center font-bold text-white shadow-lg">
               V
             </div>
             <span className="text-xl font-extrabold tracking-tight text-white bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-400">
               VORA
             </span>
-          </div>
+          </Link>
 
           <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="text-sm font-semibold text-slate-300 hover:text-white transition duration-200">
-              Home
+            <Link to="/attendee" className="text-sm font-semibold text-slate-300 hover:text-white transition duration-200">
+              Dashboard
+            </Link>
+            <Link to="/attendee/wallet" className="text-sm font-semibold text-slate-300 hover:text-white transition duration-200">
+              Ticket Wallet
             </Link>
             <span className="text-sm font-semibold text-white flex items-center space-x-1.5 bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-full">
               <Compass className="w-4 h-4 text-accent-blue animate-pulse" />
@@ -487,11 +377,18 @@ const Attendee = () => {
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-40 bg-[#030712] pt-24 px-6 flex flex-col space-y-6">
           <Link 
-            to="/" 
+            to="/attendee" 
             onClick={() => setMobileMenuOpen(false)}
             className="text-lg font-bold text-slate-300 border-b border-white/5 pb-2"
           >
-            Home
+            Dashboard
+          </Link>
+          <Link 
+            to="/attendee/wallet" 
+            onClick={() => setMobileMenuOpen(false)}
+            className="text-lg font-bold text-slate-300 border-b border-white/5 pb-2"
+          >
+            Ticket Wallet
           </Link>
           <span className="text-lg font-bold text-white flex items-center space-x-2 border-b border-white/5 pb-2">
             <Compass className="w-5 h-5 text-accent-blue" />
@@ -524,309 +421,51 @@ const Attendee = () => {
         </div>
       )}
 
-      {/* Hero section */}
-      <section className="hero-banner pt-32 pb-16 px-6 shrink-0 flex flex-col items-center justify-center text-center">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-none">
-            Discover Global Technical summits
-          </h1>
-          <p className="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto font-medium">
-            Browse and register for live, multi-track virtual conferences, workshops, and exclusive resource assets.
-          </p>
-
-          {/* Search box */}
-          <div className="pt-4 max-w-3xl mx-auto w-full">
-            <div className="search-matrix rounded-full flex items-center px-5 py-3.5 space-x-3 w-full">
-              <Search className="w-6 h-6 text-slate-400 shrink-0" />
-              <input 
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search event keywords, titles, summaries..."
-                className="bg-transparent border-none text-white text-base sm:text-lg focus:outline-none w-full placeholder-slate-500"
-              />
-            </div>
-          </div>
-
-          {/* Tags Carousel */}
-          <div className="pt-6 w-full max-w-3xl overflow-x-auto carousel-scrollbar flex items-center space-x-2 py-2">
-            {availableTags.map((tag) => {
-              const isActive = activeTags.includes(tag);
-              return (
-                <button
-                  key={tag}
-                  onClick={() => handleToggleTag(tag)}
-                  className={`px-4.5 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition duration-200 border ${
-                    isActive 
-                      ? 'bg-[#6366f1] border-[#6366f1] text-white' 
-                      : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  {tag}
-                </button>
-              );
-            })}
-          </div>
-
-        </div>
-      </section>
-
-      {/* Main Exploration Grid */}
-      <main id="explore-anchor" className="flex-1 bg-[#02040a] px-6 py-12">
-        <div className="max-w-7xl mx-auto space-y-10">
+      {/* Main Exploration Grid - centered Constraints Column */}
+      <main className="flex-grow pt-32 pb-24 z-10 relative">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           
-          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-            <h3 className="text-lg font-bold text-white tracking-wide">
-              {loading ? 'Scanning events...' : `Discovered (${meta.total_items}) Webinars`}
-            </h3>
-            {activeTags.length > 0 && (
-              <button 
-                onClick={() => setSearchParams(prev => {
-                  const next = new URLSearchParams(prev);
-                  next.delete('tags');
-                  return next;
-                })}
-                className="text-xs text-accent-blue hover:text-white transition"
-              >
-                Clear filters
-              </button>
-            )}
+          {/* Typographic Anchor Header */}
+          <div className="space-y-3 text-left">
+            <h1 className="font-display font-extrabold text-white text-4xl sm:text-6xl tracking-tighter leading-none select-none">
+              Discover Virtual Events
+            </h1>
+            <p className="font-sans text-zinc-400 text-sm sm:text-base max-w-2xl leading-relaxed">
+              Browse upcoming webinars, specialized keynotes, and interactive sessions hosted by industry leaders.
+            </p>
           </div>
 
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/25 p-5 rounded-2xl flex items-start space-x-3 text-sm text-red-400">
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-              <div>
-                <h5 className="font-bold">Discovery Failed</h5>
-                <p className="mt-1">{error}</p>
-              </div>
-            </div>
-          )}
-
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {Array.from({ length: 6 }).map((_, idx) => (
-                <div key={idx} className="rounded-2xl border border-white/5 overflow-hidden bg-white/2 flex flex-col space-y-4 h-[440px]">
-                  <div className="w-full h-48 shimmer-bg shrink-0"></div>
-                  <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                    <div className="space-y-3">
-                      <div className="h-4 w-32 shimmer-bg rounded"></div>
-                      <div className="h-6 w-full shimmer-bg rounded"></div>
-                      <div className="h-4 w-3/4 shimmer-bg rounded"></div>
-                    </div>
-                    <div className="h-10 w-full shimmer-bg rounded-xl"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : events.length === 0 ? (
-            <div className="py-24 text-center space-y-4 max-w-md mx-auto">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto border border-white/10 text-slate-400">
-                <Compass className="w-8 h-8" />
-              </div>
-              <div className="space-y-1.5">
-                <h4 className="font-bold text-white text-lg">No matches found</h4>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  We couldn't locate any events matching your criteria. Try adjusting your tags or search keyword.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {events.map((event) => {
-                const isRegistered = registeredEventIds.includes(event.id);
-                const isSoldOut = event.is_sold_out;
-                
-                return (
-                  <div 
-                    key={event.id}
-                    className={`event-card rounded-2xl flex flex-col overflow-hidden h-[450px] relative ${
-                      isSoldOut ? 'sold-out-lock' : ''
-                    }`}
-                  >
-                    
-                    <div className="relative h-48 w-full overflow-hidden shrink-0 bg-slate-900 border-b border-white/5">
-                      <img 
-                        src={event.banner_image_url || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=60'} 
-                        alt={event.title}
-                        className="banner-img w-full h-full object-cover transition-transform duration-500"
-                        loading="lazy"
-                      />
-
-                      <span className={`absolute top-3 right-3 text-[10px] font-bold tracking-wider px-3 py-1 rounded-full shadow-lg text-white ${
-                        isSoldOut 
-                          ? 'bg-red-600' 
-                          : isRegistered
-                            ? 'bg-status-success'
-                            : 'bg-emerald-600'
-                      }`}>
-                        {isSoldOut ? 'SOLD OUT' : isRegistered ? 'REGISTERED' : 'REGISTER NOW'}
-                      </span>
-                    </div>
-
-                    <div className="p-6 flex-1 flex flex-col justify-between min-h-0 bg-gradient-to-b from-transparent to-white/[0.01]">
-                      <div className="space-y-3 min-h-0 overflow-hidden">
-                        
-                        <div className="text-[10px] font-bold text-accent-blue font-mono tracking-wider flex items-center space-x-1.5">
-                          <Calendar className="w-3.5 h-3.5 shrink-0" />
-                          <span>{formatEventDate(event.start_timestamp)}</span>
-                        </div>
-
-                        <h4 className="text-lg font-bold text-white leading-snug line-clamp-2" title={event.title}>
-                          {event.title}
-                        </h4>
-
-                        <div className="flex items-center space-x-2 text-slate-400">
-                          {event.organizer_avatar_url ? (
-                            <img 
-                              src={event.organizer_avatar_url} 
-                              alt={`${event.organizer_first_name} avatar`} 
-                              className="w-5 h-5 rounded-full border border-white/10"
-                            />
-                          ) : (
-                            <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center border border-white/10">
-                              <User className="w-3 h-3 text-slate-400" />
-                            </div>
-                          )}
-                          <span className="text-xs font-semibold">
-                            By {event.organizer_first_name} {event.organizer_last_name}
-                          </span>
-                        </div>
-
-                        <p className="text-xs text-slate-400 leading-relaxed line-clamp-3">
-                          {event.description}
-                        </p>
-
-                        {event.tags && event.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 pt-1">
-                            {event.tags.slice(0, 3).map((t, i) => (
-                              <span key={i} className="text-[9px] bg-white/5 text-slate-300 border border-white/10 px-2 py-0.5 rounded-md font-medium">
-                                {t}
-                              </span>
-                            ))}
-                            {event.tags.length > 3 && (
-                              <span className="text-[9px] text-slate-500 font-bold px-1 py-0.5">
-                                +{event.tags.length - 3}
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                      </div>
-
-                      <div className="pt-4 mt-auto">
-                        <button
-                          disabled={isSoldOut || isRegistered}
-                          onClick={() => handleOpenCheckout(event)}
-                          className={`w-full py-2.5 rounded-xl text-xs font-bold transition duration-200 border flex items-center justify-center space-x-2 shadow-sm ${
-                            isRegistered
-                              ? 'bg-status-success/15 border-status-success/30 text-status-success cursor-default'
-                              : isSoldOut
-                                ? 'bg-red-950/20 border-red-900/30 text-red-500 cursor-not-allowed'
-                                : 'bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20'
-                          }`}
-                        >
-                          {isRegistered ? (
-                            <>
-                              <CheckCircle className="w-3.5 h-3.5" />
-                              <span>Registration Confirmed</span>
-                            </>
-                          ) : isSoldOut ? (
-                            <span>Capacity Fully Booked</span>
-                          ) : (
-                            <span>Secure Ticket Reservation</span>
-                          )}
-                        </button>
-                      </div>
-
-                    </div>
-
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {!loading && meta.total_pages > 1 && (
-            <div className="pt-12 flex justify-center items-center space-x-2 shrink-0 border-t border-white/5">
-              
-              <button
-                disabled={pageParam <= 1}
-                onClick={() => handlePageChange(pageParam - 1)}
-                className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white disabled:opacity-40 disabled:hover:text-slate-400 transition"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-
-              {Array.from({ length: meta.total_pages }).map((_, i) => {
-                const pNum = i + 1;
-                const isActive = pageParam === pNum;
-                return (
-                  <button
-                    key={pNum}
-                    onClick={() => handlePageChange(pNum)}
-                    className={`w-10 h-10 rounded-xl font-mono text-sm font-bold border transition duration-200 ${
-                      isActive 
-                        ? 'bg-[#6366f1] border-[#6366f1] text-white' 
-                        : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                    }`}
-                  >
-                    {pNum}
-                  </button>
-                );
-              })}
-
-              <button
-                disabled={pageParam >= meta.total_pages}
-                onClick={() => handlePageChange(pageParam + 1)}
-                className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white disabled:opacity-40 disabled:hover:text-slate-400 transition"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-
-            </div>
-          )}
-
+          <DiscoveryMatrix 
+            registeredEventIds={registeredEventIds} 
+            onRegister={handleOpenCheckout} 
+          />
+          
         </div>
       </main>
 
       {/* Global Footer */}
-      <footer className="border-t border-white/5 bg-[#030712] py-8 text-center text-xs text-slate-500 px-6 shrink-0 mt-auto">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p>© 2026 Project Vora. Unified Attendee Space • EDUPFSD072 Full Stack Development.</p>
+      <footer className="border-t border-white/5 bg-zinc-950 py-8 text-center text-xs text-slate-500 px-6 shrink-0 mt-auto">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p>© 2026 Project Vora. Unified Attendee Space.</p>
           <div className="flex space-x-4">
-            <Link to="/" className="hover:underline hover:text-slate-300">Privacy Policy</Link>
+            <Link to="/" className="hover:underline hover:text-slate-350">Privacy Policy</Link>
             <span>•</span>
-            <Link to="/" className="hover:underline hover:text-slate-300">Terms of Use</Link>
+            <Link to="/" className="hover:underline hover:text-slate-355">Terms of Use</Link>
           </div>
         </div>
       </footer>
 
       {/* TRANSACTIONAL REGISTRATION CHECKOUT & DIGITAL WALLET MODAL */}
-      {isCheckoutOpen && checkoutEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          
-          {/* Backdrop Z-axis isolation overlay (Task 5) */}
-          <div 
-            onClick={handleCloseCheckout}
-            className="fixed inset-0 bg-[#020306]/85 backdrop-blur-[24px] transition-opacity duration-300"
-          ></div>
-
-          {/* Checkout Housing Card (Task 5) */}
-          <div className="w-full max-w-[800px] bg-[#111827] border border-white/10 rounded-[24px] shadow-2xl relative z-10 flex flex-col overflow-hidden h-[540px] md:h-[480px]">
+      <VoraModal
+        isOpen={isCheckoutOpen && !!checkoutEvent}
+        onClose={handleCloseCheckout}
+        className="max-w-[800px] h-[540px] md:h-[480px] p-0 overflow-hidden flex flex-col bg-[#111827]"
+      >
+        {checkoutEvent && (
+          <div className="w-full h-full flex flex-col relative">
             
-            {/* Ambient Top lightning */}
+            {/* Ambient Top horizontal lighting border */}
             <div className="absolute left-0 right-0 top-0 h-[1.5px] bg-gradient-to-r from-accent-violet/30 via-accent-blue/20 to-transparent"></div>
-
-            {/* Close Button */}
-            <button
-              disabled={checkoutSubmitting}
-              onClick={handleCloseCheckout}
-              className="absolute top-4 right-4 p-1.5 rounded-full bg-[#111827]/80 border border-white/10 hover:bg-slate-800 text-slate-400 hover:text-white transition z-20 print-no-show"
-            >
-              <X className="w-4 h-4" />
-            </button>
 
             {/* Success state - ticket boarding pass layout (Task 8) */}
             {confirmedTicket ? (
@@ -947,7 +586,7 @@ const Attendee = () => {
                 </div>
 
                 {/* Right 60% column - Checklist parameters */}
-                <div className="flex-1 p-6 flex flex-col justify-between h-full">
+                <div className="flex-grow p-6 flex flex-col justify-between h-full">
                   
                   <div className="space-y-6">
                     <div className="space-y-1.5">
@@ -1031,10 +670,9 @@ const Attendee = () => {
 
               </div>
             )}
-
           </div>
-        </div>
-      )}
+        )}
+      </VoraModal>
 
     </div>
   );

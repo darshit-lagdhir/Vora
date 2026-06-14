@@ -47,6 +47,7 @@ export default defineConfig({
               normalizedPath.includes('node_modules/react-dom/') ||
               normalizedPath.includes('node_modules/react-router/') ||
               normalizedPath.includes('node_modules/react-router-dom/') ||
+              normalizedPath.includes('node_modules/@remix-run/router/') ||
               normalizedPath.includes('node_modules/scheduler/')
             ) {
               return 'framework';

@@ -15,6 +15,8 @@ const setupDatabase = async () => {
     console.log('[Setup DB] Dropping existing tables (relational teardown)...');
     await client.query('DROP TABLE IF EXISTS resource_downloads CASCADE;');
     await client.query('DROP TABLE IF EXISTS resources CASCADE;');
+    await client.query('DROP TABLE IF EXISTS questions CASCADE;');
+    await client.query('DROP TABLE IF EXISTS broadcasts CASCADE;');
     await client.query('DROP TABLE IF EXISTS registrations CASCADE;');
     await client.query('DROP TABLE IF EXISTS sessions CASCADE;');
     await client.query('DROP TABLE IF EXISTS events CASCADE;');
@@ -30,6 +32,10 @@ const setupDatabase = async () => {
         last_name VARCHAR(100) NOT NULL,
         platform_role VARCHAR(20) NOT NULL DEFAULT 'attendee' CHECK (platform_role IN ('attendee', 'organizer')),
         avatar_url VARCHAR(512),
+        notify_event_start BOOLEAN NOT NULL DEFAULT TRUE,
+        notify_weekly_digest BOOLEAN NOT NULL DEFAULT TRUE,
+        notify_marketing BOOLEAN NOT NULL DEFAULT FALSE,
+        refresh_tokens TEXT[] DEFAULT '{}'::TEXT[],
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         CONSTRAINT fk_profiles_auth_users FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
@@ -50,6 +56,10 @@ const setupDatabase = async () => {
         maximum_capacity INTEGER NOT NULL CHECK (maximum_capacity > 0),
         tags VARCHAR(100)[] DEFAULT '{}'::VARCHAR(100)[],
         banner_image_url VARCHAR(512),
+        trigger_registration_confirmation BOOLEAN NOT NULL DEFAULT TRUE,
+        trigger_t_minus_24h BOOLEAN NOT NULL DEFAULT TRUE,
+        trigger_t_minus_1h BOOLEAN NOT NULL DEFAULT TRUE,
+        trigger_t_plus_24h BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         CONSTRAINT check_event_timestamps CHECK (end_timestamp > start_timestamp)
@@ -120,6 +130,35 @@ const setupDatabase = async () => {
       );
     `);
 
+    // 6c. Create questions table
+    console.log('[Setup DB] Creating table: questions...');
+    await client.query(`
+      CREATE TABLE questions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+        attendee_name VARCHAR(255) NOT NULL,
+        question_text TEXT NOT NULL,
+        upvotes INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
+    // 6d. Create broadcasts table
+    console.log('[Setup DB] Creating table: broadcasts...');
+    await client.query(`
+      CREATE TABLE broadcasts (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+        subject VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        audience_cohort VARCHAR(100) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'sending' CHECK (status IN ('sending', 'delivered', 'failed')),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
     // 7. Audit Timestamps: Create update trigger function & bind triggers
     console.log('[Setup DB] Registering auto-timestamp triggers...');
     await client.query(`
@@ -132,7 +171,7 @@ const setupDatabase = async () => {
       $$ LANGUAGE plpgsql;
     `);
 
-    const tables = ['profiles', 'events', 'sessions', 'registrations', 'resources'];
+    const tables = ['profiles', 'events', 'sessions', 'registrations', 'resources', 'questions', 'broadcasts'];
     for (const table of tables) {
       await client.query(`
         CREATE TRIGGER update_${table}_modtime
@@ -156,6 +195,10 @@ const setupDatabase = async () => {
     await client.query('CREATE INDEX idx_events_tags ON events(tags);');
     await client.query('CREATE INDEX idx_resource_downloads_resource ON resource_downloads(resource_id);');
     await client.query('CREATE INDEX idx_resource_downloads_attendee ON resource_downloads(attendee_id);');
+    await client.query('CREATE INDEX idx_questions_event ON questions(event_id);');
+    await client.query('CREATE INDEX idx_broadcasts_event ON broadcasts(event_id);');
+    await client.query('CREATE INDEX idx_events_status_start ON events(status, start_timestamp);');
+    await client.query('CREATE INDEX idx_registrations_event_created ON registrations(event_id, created_at);');
 
     // 9. Row-Level Security: Enable RLS on all tables
     console.log('[Setup DB] Enabling Row-Level Security on all entities...');
@@ -166,6 +209,24 @@ const setupDatabase = async () => {
 
     // 10. RLS Policies Configuration
     console.log('[Setup DB] Injecting RLS access control policies...');
+
+    // Questions Policies
+    await client.query(`
+      CREATE POLICY select_questions ON questions FOR SELECT 
+      TO authenticated 
+      USING (true);
+    `);
+    await client.query(`
+      CREATE POLICY insert_questions ON questions FOR INSERT 
+      TO authenticated 
+      WITH CHECK (true);
+    `);
+    await client.query(`
+      CREATE POLICY update_questions ON questions FOR UPDATE 
+      TO authenticated 
+      USING (true)
+      WITH CHECK (true);
+    `);
 
     // Profiles Policies
     await client.query(`
@@ -358,6 +419,39 @@ const setupDatabase = async () => {
       TO authenticated 
       WITH CHECK (
         auth.uid() = attendee_id
+      );
+    `);
+
+    // Broadcasts Policies
+    console.log('[Setup DB] Injecting broadcasts RLS policies...');
+    await client.query(`
+      CREATE POLICY select_broadcasts ON broadcasts FOR SELECT 
+      TO authenticated 
+      USING (
+        EXISTS (
+          SELECT 1 FROM events 
+          WHERE id = broadcasts.event_id AND organizer_id = auth.uid()
+        )
+      );
+    `);
+    await client.query(`
+      CREATE POLICY insert_broadcasts ON broadcasts FOR INSERT 
+      TO authenticated 
+      WITH CHECK (
+        EXISTS (
+          SELECT 1 FROM events 
+          WHERE id = broadcasts.event_id AND organizer_id = auth.uid()
+        )
+      );
+    `);
+    await client.query(`
+      CREATE POLICY update_broadcasts ON broadcasts FOR UPDATE 
+      TO authenticated 
+      USING (
+        EXISTS (
+          SELECT 1 FROM events 
+          WHERE id = broadcasts.event_id AND organizer_id = auth.uid()
+        )
       );
     `);
 

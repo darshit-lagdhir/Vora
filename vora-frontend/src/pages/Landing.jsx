@@ -1,121 +1,161 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Calendar, Users, ArrowRight, Video, FileText } from 'lucide-react';
+import { motion } from 'framer-motion';
+import NavBar from '../components/layout/NavBar.jsx';
+import Hero from '../components/landing/Hero.jsx';
+import BentoGrid from '../components/landing/BentoGrid.jsx';
+import Heading from '../components/ui/Heading.jsx';
+import Text from '../components/ui/Text.jsx';
 
-const Landing = () => {
+/**
+ * Public Landing Page of the Vora Platform.
+ * Compiles the floating Soft-Glass NavBar, the typographic Hero section with background grid,
+ * the asymmetric Bento Grid showcasing curriculum features, and a premium academic footer.
+ */
+export default function Landing() {
   return (
-    <div className="min-h-screen bg-brand-dark flex flex-col justify-between">
-      {/* Header / Navigation Bar */}
-      <header className="border-b border-brand-slate bg-brand-dark/95 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-tr from-accent-violet to-accent-blue flex items-center justify-center font-bold text-xl text-white shadow-md">
-              V
-            </div>
-            <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">VORA</span>
-          </div>
-          <nav className="flex space-x-4">
-            <Link to="/auth" className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors duration-200">
-              Sign In
-            </Link>
-            <Link to="/auth?mode=register" className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-accent-violet to-accent-blue text-white rounded-lg hover:opacity-90 shadow-md hover:scale-[1.02] transform transition duration-200">
-              Get Started
-            </Link>
-          </nav>
-        </div>
-      </header>
+    <div className="relative min-h-screen bg-zinc-950 overflow-x-hidden flex flex-col justify-between text-white">
+      
+      {/* Floating Pill Navigation chassis */}
+      <NavBar />
 
-      {/* Hero Section */}
-      <main className="flex-grow max-w-7xl w-full mx-auto px-6 py-16 flex flex-col items-center justify-center text-center">
-        <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-brand-slate/80 border border-brand-card text-xs text-slate-300 mb-8 animate-pulse">
-          <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-status-success"></span>
-          </span>
-          <span>Next-Generation Virtual Hosting</span>
-        </div>
-        
-        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight max-w-4xl leading-tight mb-6">
-          Orchestrate Immersive{' '}
-          <span className="bg-gradient-to-r from-accent-violet via-fuchsia-400 to-accent-blue bg-clip-text text-transparent">
-            Virtual Events
-          </span>{' '}
-          with Absolute Precision
-        </h1>
+      <main className="flex-grow">
+        {/* Immersive Typographic Hero section */}
+        <Hero />
 
-        <p className="text-lg md:text-xl text-brand-muted max-w-2xl mb-10 leading-relaxed">
-          Project Vora offers a robust, highly secure, and performance-tuned infrastructure for hosting web conferences, managing registrations, and sharing post-event resources.
-        </p>
-
-        {/* Action Triggers */}
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-16">
-          <Link 
-            to="/auth" 
-            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-accent-violet to-accent-blue hover:from-accent-violetHover hover:to-accent-blueHover text-white font-semibold rounded-xl flex items-center justify-center space-x-2 transition duration-300 shadow-lg shadow-accent-violet/20 hover:scale-[1.03]"
-          >
-            <span>Enter Auth Gateway</span>
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-          <Link 
-            to="/organizer" 
-            className="w-full sm:w-auto px-8 py-4 bg-brand-slate border border-brand-card hover:bg-brand-card text-white font-semibold rounded-xl flex items-center justify-center space-x-2 transition duration-300 hover:scale-[1.03]"
-          >
-            <span>Organizer Console</span>
-          </Link>
-          <Link 
-            to="/attendee" 
-            className="w-full sm:w-auto px-8 py-4 bg-brand-slate border border-brand-card hover:bg-brand-card text-white font-semibold rounded-xl flex items-center justify-center space-x-2 transition duration-300 hover:scale-[1.03]"
-          >
-            <span>Attendee Portal</span>
-          </Link>
-        </div>
-
-        {/* Feature Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl text-left">
-          <div className="bg-brand-slate p-8 rounded-2xl border border-brand-card hover:border-accent-violet/50 transition duration-300">
-            <div className="w-12 h-12 bg-accent-violet/10 text-accent-violet rounded-xl flex items-center justify-center mb-6">
-              <Video className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold mb-3">Live Streaming & Scheduling</h3>
-            <p className="text-brand-muted text-sm leading-relaxed">
-              Schedule conferences and webinars seamlessly. Program multiple consecutive tracks and display speaker portfolios effortlessly.
-            </p>
-          </div>
-
-          <div className="bg-brand-slate p-8 rounded-2xl border border-brand-card hover:border-accent-blue/50 transition duration-300">
-            <div className="w-12 h-12 bg-accent-blue/10 text-accent-blue rounded-xl flex items-center justify-center mb-6">
-              <Users className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold mb-3">Attendee Management</h3>
-            <p className="text-brand-muted text-sm leading-relaxed">
-              Robust registration dashboards, role verification hooks, and real-time attendance statistics for organizers.
-            </p>
-          </div>
-
-          <div className="bg-brand-slate p-8 rounded-2xl border border-brand-card hover:border-status-success/50 transition duration-300">
-            <div className="w-12 h-12 bg-status-success/10 text-status-success rounded-xl flex items-center justify-center mb-6">
-              <FileText className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold mb-3">Resource Sharing</h3>
-            <p className="text-brand-muted text-sm leading-relaxed">
-              Distribute presentation slides, reference materials, and recording links post-event within a secured access vault.
-            </p>
-          </div>
-        </div>
+        {/* Mapped Bento Grid Features container */}
+        <BentoGrid />
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-brand-slate bg-brand-dark/95 py-8 text-center text-xs text-brand-muted px-6">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p>© 2026 Project Vora Ecosystem. Designed for EDUPFSD072 Full Stack Development.</p>
-          <div className="flex items-center space-x-2 text-slate-500">
-            <Shield className="w-4 h-4 text-accent-blue" />
-            <span>PostgreSQL Relational DB (Supabase) + Node ESM + React SPA</span>
+      {/* Global Academic Footer */}
+      <footer className="relative z-10 bg-zinc-950 border-t border-white/5 pt-24 pb-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12">
+          
+          {/* Brand/Status Column */}
+          <div className="flex flex-col space-y-4">
+            <Link to="/" className="flex items-center select-none font-display font-extrabold text-2xl tracking-tighter text-white">
+              vora
+            </Link>
+            <Text className="!text-xs !text-zinc-450 leading-relaxed max-w-xs">
+              A premium virtual event management ecosystem designed to orchestrate memorable digital gatherings and webinars.
+            </Text>
+            <Text className="!text-[10px] !text-zinc-500 tracking-wider uppercase">
+              © 2026 Vora. All rights reserved.
+            </Text>
           </div>
+
+          {/* Product Column */}
+          <div className="flex flex-col space-y-4">
+            <h4 className="font-brutalist uppercase tracking-[0.2em] text-xs text-zinc-500 text-left">
+              Product
+            </h4>
+            <ul className="space-y-2.5 text-left">
+              <li>
+                <a href="#features">
+                  <motion.span
+                    className="inline-block font-clean-sans text-xs text-zinc-300 transition-colors cursor-pointer"
+                    whileHover={{ x: 2, color: "#ffffff" }}
+                    transition={{ type: "tween", duration: 0.15 }}
+                  >
+                    Features
+                  </motion.span>
+                </a>
+              </li>
+              <li>
+                <Link to="/organizer">
+                  <motion.span
+                    className="inline-block font-clean-sans text-xs text-zinc-300 transition-colors cursor-pointer"
+                    whileHover={{ x: 2, color: "#ffffff" }}
+                    transition={{ type: "tween", duration: 0.15 }}
+                  >
+                    Organizer Dashboard
+                  </motion.span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/attendee">
+                  <motion.span
+                    className="inline-block font-clean-sans text-xs text-zinc-300 transition-colors cursor-pointer"
+                    whileHover={{ x: 2, color: "#ffffff" }}
+                    transition={{ type: "tween", duration: 0.15 }}
+                  >
+                    Attendee Hub
+                  </motion.span>
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Company Column */}
+          <div className="flex flex-col space-y-4">
+            <h4 className="font-brutalist uppercase tracking-[0.2em] text-xs text-zinc-500 text-left">
+              Company
+            </h4>
+            <ul className="space-y-2.5 text-left">
+              <li>
+                <a href="#docs">
+                  <motion.span
+                    className="inline-block font-clean-sans text-xs text-zinc-300 transition-colors cursor-pointer"
+                    whileHover={{ x: 2, color: "#ffffff" }}
+                    transition={{ type: "tween", duration: 0.15 }}
+                  >
+                    Documentation
+                  </motion.span>
+                </a>
+              </li>
+              <li>
+                <a href="#resources">
+                  <motion.span
+                    className="inline-block font-clean-sans text-xs text-zinc-300 transition-colors cursor-pointer"
+                    whileHover={{ x: 2, color: "#ffffff" }}
+                    transition={{ type: "tween", duration: 0.15 }}
+                  >
+                    Resources
+                  </motion.span>
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Legal Column */}
+          <div className="flex flex-col space-y-4">
+            <h4 className="font-brutalist uppercase tracking-[0.2em] text-xs text-zinc-500 text-left">
+              Legal
+            </h4>
+            <ul className="space-y-2.5 text-left">
+              <li>
+                <motion.span
+                  className="inline-block font-clean-sans text-xs text-zinc-300 transition-colors cursor-pointer"
+                  whileHover={{ x: 2, color: "#ffffff" }}
+                  transition={{ type: "tween", duration: 0.15 }}
+                >
+                  Privacy Policy
+                </motion.span>
+              </li>
+              <li>
+                <motion.span
+                  className="inline-block font-clean-sans text-xs text-zinc-300 transition-colors cursor-pointer"
+                  whileHover={{ x: 2, color: "#ffffff" }}
+                  transition={{ type: "tween", duration: 0.15 }}
+                >
+                  Terms of Service
+                </motion.span>
+              </li>
+              <li>
+                <motion.span
+                  className="inline-block font-clean-sans text-xs text-zinc-300 transition-colors cursor-pointer"
+                  whileHover={{ x: 2, color: "#ffffff" }}
+                  transition={{ type: "tween", duration: 0.15 }}
+                >
+                  Security & Trust
+                </motion.span>
+              </li>
+            </ul>
+          </div>
+
         </div>
       </footer>
+
     </div>
   );
-};
-
-export default Landing;
+}
