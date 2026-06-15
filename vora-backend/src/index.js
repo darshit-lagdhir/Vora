@@ -1,6 +1,4 @@
-import dns from 'dns';
-dns.setDefaultResultOrder('ipv4first');
-
+import './config/dnsSetup.js';
 import './config/preflightGuard.js';
 import app from './app.js';
 import env from './config/env.js';
