@@ -45,17 +45,13 @@ describe('Event Integration Tests', () => {
     );
 
     // Sign authentication access tokens
-    organizerToken = jwt.sign(
-      { sub: organizerId, role: 'organizer' },
-      env.JWT_SECRET,
-      { expiresIn: '15m' }
-    );
+    organizerToken = jwt.sign({ sub: organizerId, role: 'organizer' }, env.JWT_SECRET, {
+      expiresIn: '15m',
+    });
 
-    attendeeToken = jwt.sign(
-      { sub: attendeeId, role: 'attendee' },
-      env.JWT_SECRET,
-      { expiresIn: '15m' }
-    );
+    attendeeToken = jwt.sign({ sub: attendeeId, role: 'attendee' }, env.JWT_SECRET, {
+      expiresIn: '15m',
+    });
   });
 
   describe('POST /api/v1/events', () => {

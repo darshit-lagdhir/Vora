@@ -1,12 +1,9 @@
 import request from 'supertest';
 import { jest } from '@jest/globals';
 import app from '../../src/app.js';
-import pool, { setQueryMockOverride } from '../../src/config/db.js';
+import { setQueryMockOverride } from '../../src/config/db.js';
 import nativeWorkerService from '../../src/services/nativeWorkerService.js';
-import {
-  setRedisPassThroughForTesting,
-  setMockClientForTesting
-} from '../../src/config/redis.js';
+import { setRedisPassThroughForTesting, setMockClientForTesting } from '../../src/config/redis.js';
 
 describe('Deep Health & Integration Telemetry Suite', () => {
   let mockRedis;
@@ -15,7 +12,7 @@ describe('Deep Health & Integration Telemetry Suite', () => {
     mockRedis = {
       isOpen: true,
       set: jest.fn().mockResolvedValue('OK'),
-      get: jest.fn().mockResolvedValue('ok')
+      get: jest.fn().mockResolvedValue('ok'),
     };
 
     setRedisPassThroughForTesting(false);
@@ -52,7 +49,7 @@ describe('Deep Health & Integration Telemetry Suite', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.status).toBe('nominal');
       expect(res.body.durationMs).toBeDefined();
-      
+
       // Verify database diagnostics
       expect(res.body.components.database.status).toBe('healthy');
       expect(res.body.components.database.latencyMs).toBeDefined();
@@ -104,7 +101,9 @@ describe('Deep Health & Integration Telemetry Suite', () => {
 
     it('should return 503 and flag NATIVE_WORKER_UNRESPONSIVE if native workers fail', async () => {
       // Mock worker service to fail
-      const workerSpy = jest.spyOn(nativeWorkerService, 'verifySignature').mockRejectedValueOnce(new Error('IPC channel broken'));
+      const workerSpy = jest
+        .spyOn(nativeWorkerService, 'verifySignature')
+        .mockRejectedValueOnce(new Error('IPC channel broken'));
 
       const res = await request(app).get('/api/v1/health/deep');
 

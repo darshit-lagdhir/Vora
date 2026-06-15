@@ -7,7 +7,7 @@ beforeAll(async () => {
   // Spin up isolated, in-memory MongoDB server
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
-  
+
   // Override process.env.DATABASE_URL
   process.env.DATABASE_URL = uri;
 });

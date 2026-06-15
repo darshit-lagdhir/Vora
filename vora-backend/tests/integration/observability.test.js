@@ -16,12 +16,9 @@ describe('Observability & Forensic Traceability Integration Suite', () => {
         nested: {
           password: 'supersecretpassword123',
           cookie: 'session_token_xyz',
-          unrelated: 42
+          unrelated: 42,
         },
-        tokensArray: [
-          { token: 'jwt-header-part' },
-          { clean: 'value' }
-        ]
+        tokensArray: [{ token: 'jwt-header-part' }, { clean: 'value' }],
       };
 
       const redacted = redactObject(sensitivePayload);
@@ -51,7 +48,7 @@ describe('Observability & Forensic Traceability Integration Suite', () => {
         const store = als.getStore();
         res.status(200).json({
           correlationId: store?.correlationId,
-          userId: store?.userId
+          userId: store?.userId,
         });
       });
     });

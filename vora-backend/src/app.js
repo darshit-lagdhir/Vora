@@ -192,9 +192,9 @@ app.use(cookieParser());
 //    Monitors heap memory usage and event loop lag. Returns 503 when thresholds
 //    are exceeded to prevent cascading failures under heavy load.
 // ═══════════════════════════════════════════════════════════════════════════════
-const HEAP_THRESHOLD_PERCENT = 0.90;   // 90% of max heap
+const HEAP_THRESHOLD_PERCENT = 0.9; // 90% of max heap
 const EVENT_LOOP_LAG_THRESHOLD_MS = 500; // 500ms event loop lag
-const REQUEST_TIMEOUT_MS = 30000;        // 30-second global request timeout
+const REQUEST_TIMEOUT_MS = 30000; // 30-second global request timeout
 
 let lastEventLoopCheck = Date.now();
 let eventLoopLag = 0;
@@ -203,15 +203,19 @@ let eventLoopLag = 0;
 setInterval(() => {
   const now = Date.now();
   const expectedInterval = 500;
-  eventLoopLag = Math.max(0, (now - lastEventLoopCheck) - expectedInterval);
+  eventLoopLag = Math.max(0, now - lastEventLoopCheck - expectedInterval);
   lastEventLoopCheck = now;
 }, 500).unref(); // .unref() prevents this timer from keeping the process alive
 
 app.use((req, res, next) => {
   // Bypass overload checks for static assets and health check probes
-  const isStaticAsset = req.url.startsWith('/assets/') || req.url.startsWith('/fonts/') || req.url === '/favicon.ico';
-  const isHealthCheck = req.url.startsWith('/api/v1/health/') || req.url === '/health' || req.url === '/api/v1/system/health';
-  
+  const isStaticAsset =
+    req.url.startsWith('/assets/') || req.url.startsWith('/fonts/') || req.url === '/favicon.ico';
+  const isHealthCheck =
+    req.url.startsWith('/api/v1/health/') ||
+    req.url === '/health' ||
+    req.url === '/api/v1/system/health';
+
   if (isStaticAsset || isHealthCheck) {
     return next();
   }
@@ -224,23 +228,26 @@ app.use((req, res, next) => {
   if (heapUsedRatio > HEAP_THRESHOLD_PERCENT || eventLoopLag > EVENT_LOOP_LAG_THRESHOLD_MS) {
     console.warn(
       `[OverloadGuard] System overload detected — ` +
-      `Heap: ${(heapUsedRatio * 100).toFixed(1)}% of limit | ` +
-      `Event Loop Lag: ${eventLoopLag}ms | ` +
-      `Rejecting ${req.method} ${req.url}`
+        `Heap: ${(heapUsedRatio * 100).toFixed(1)}% of limit | ` +
+        `Event Loop Lag: ${eventLoopLag}ms | ` +
+        `Rejecting ${req.method} ${req.url}`
     );
 
     res.setHeader('Retry-After', '30');
     return res.status(503).json({
       success: false,
       status: 503,
-      message: 'Service temporarily unavailable due to system overload. Please retry after 30 seconds.',
+      message:
+        'Service temporarily unavailable due to system overload. Please retry after 30 seconds.',
     });
   }
 
   // Apply per-request timeout sentinel
   req.setTimeout(REQUEST_TIMEOUT_MS, () => {
     if (!res.headersSent) {
-      console.warn(`[TimeoutGuard] Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${req.method} ${req.url}`);
+      console.warn(
+        `[TimeoutGuard] Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${req.method} ${req.url}`
+      );
       res.status(408).json({
         success: false,
         status: 408,

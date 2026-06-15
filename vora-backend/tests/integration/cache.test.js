@@ -2,10 +2,7 @@ import { jest } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 import { cacheRoute } from '../../src/middleware/cacheMiddleware.js';
-import {
-  setRedisPassThroughForTesting,
-  setMockClientForTesting
-} from '../../src/config/redis.js';
+import { setRedisPassThroughForTesting, setMockClientForTesting } from '../../src/config/redis.js';
 import { triggerCachePurge } from '../../src/services/cacheInvalidationService.js';
 
 describe('Cache Caching and Invalidation Suite', () => {
@@ -20,7 +17,7 @@ describe('Cache Caching and Invalidation Suite', () => {
       set: jest.fn(),
       del: jest.fn(),
       scan: jest.fn(),
-      scanIterator: jest.fn()
+      scanIterator: jest.fn(),
     };
 
     setRedisPassThroughForTesting(false);
@@ -92,13 +89,16 @@ describe('Cache Caching and Invalidation Suite', () => {
         async *[Symbol.asyncIterator]() {
           yield 'vora:cache:abc:domain:events';
           yield 'vora:cache:xyz:domain:events';
-        }
+        },
       });
       mockClient.del.mockResolvedValue(1);
 
       await triggerCachePurge('events');
 
-      expect(mockClient.scanIterator).toHaveBeenCalledWith({ MATCH: '*:domain:events', COUNT: 100 });
+      expect(mockClient.scanIterator).toHaveBeenCalledWith({
+        MATCH: '*:domain:events',
+        COUNT: 100,
+      });
       expect(mockClient.del).toHaveBeenCalledTimes(2);
       expect(mockClient.del).toHaveBeenNthCalledWith(1, 'vora:cache:abc:domain:events');
       expect(mockClient.del).toHaveBeenNthCalledWith(2, 'vora:cache:xyz:domain:events');
@@ -106,12 +106,15 @@ describe('Cache Caching and Invalidation Suite', () => {
 
     it('should handle no keys to evict gracefully', async () => {
       mockClient.scanIterator.mockReturnValue({
-        async *[Symbol.asyncIterator]() {}
+        async *[Symbol.asyncIterator]() {},
       });
 
       await triggerCachePurge('events');
 
-      expect(mockClient.scanIterator).toHaveBeenCalledWith({ MATCH: '*:domain:events', COUNT: 100 });
+      expect(mockClient.scanIterator).toHaveBeenCalledWith({
+        MATCH: '*:domain:events',
+        COUNT: 100,
+      });
       expect(mockClient.del).not.toHaveBeenCalled();
     });
   });

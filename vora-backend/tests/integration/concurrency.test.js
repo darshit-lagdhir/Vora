@@ -10,7 +10,7 @@ describe('Concurrency Transaction Integration Tests', () => {
     // 1. Setup target event with engineered maximum capacity = 5
     const eventId = crypto.randomUUID();
     const organizerId = crypto.randomUUID();
-    
+
     mockDb.events.push({
       id: eventId,
       organizer_id: organizerId,
@@ -27,7 +27,7 @@ describe('Concurrency Transaction Integration Tests', () => {
     // 2. Generate 20 unique attendees and sign their authentication sessions
     const numRequests = 20;
     const tokens = [];
-    
+
     for (let i = 0; i < numRequests; i++) {
       const attId = crypto.randomUUID();
       mockDb.profiles.push({
@@ -43,11 +43,9 @@ describe('Concurrency Transaction Integration Tests', () => {
         refresh_tokens: [],
       });
 
-      const token = jwt.sign(
-        { sub: attId, role: 'attendee' },
-        env.JWT_SECRET,
-        { expiresIn: '15m' }
-      );
+      const token = jwt.sign({ sub: attId, role: 'attendee' }, env.JWT_SECRET, {
+        expiresIn: '15m',
+      });
       tokens.push(token);
     }
 

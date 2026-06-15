@@ -29,11 +29,9 @@ describe('Memory Safety Cross-Language Reconciliation & FFI Validation Suite', (
     });
 
     // Sign JWT access token
-    organizerToken = jwt.sign(
-      { sub: organizerId, role: 'organizer' },
-      env.JWT_SECRET,
-      { expiresIn: '15m' }
-    );
+    organizerToken = jwt.sign({ sub: organizerId, role: 'organizer' }, env.JWT_SECRET, {
+      expiresIn: '15m',
+    });
   });
 
   afterAll(() => {
@@ -45,7 +43,9 @@ describe('Memory Safety Cross-Language Reconciliation & FFI Validation Suite', (
     it('should track pointer registration and throw on double-free or use-after-free', () => {
       const ptr = memoryManager.generatePointerAddress();
       let cleaned = false;
-      const cleanup = () => { cleaned = true; };
+      const cleanup = () => {
+        cleaned = true;
+      };
 
       // Register pointer
       memoryManager.registerPointer(ptr, 64, cleanup, null, 'test_ptr');
@@ -71,7 +71,13 @@ describe('Memory Safety Cross-Language Reconciliation & FFI Validation Suite', (
       let ptrCaptured;
 
       await memoryManager.runScoped(async (ctx) => {
-        const { ptr } = ctx.allocate(32, () => { cleaned = true; }, 'scoped_test_ptr');
+        const { ptr } = ctx.allocate(
+          32,
+          () => {
+            cleaned = true;
+          },
+          'scoped_test_ptr'
+        );
         ptrCaptured = ptr;
         memoryManager.assertPointerValid(ptr);
         // Do not call freePointer explicitly; expect auto-cleanup
@@ -95,7 +101,7 @@ describe('Memory Safety Cross-Language Reconciliation & FFI Validation Suite', (
         .send({
           signature: giantSignature,
           publicKey: 'valid-key',
-          msg: 'valid-message'
+          msg: 'valid-message',
         });
 
       expect(res.statusCode).toBe(400);
@@ -113,7 +119,7 @@ describe('Memory Safety Cross-Language Reconciliation & FFI Validation Suite', (
         .send({
           signature: 'valid-signature',
           publicKey: giantPublicKey,
-          msg: 'valid-message'
+          msg: 'valid-message',
         });
 
       expect(res.statusCode).toBe(400);
@@ -131,7 +137,7 @@ describe('Memory Safety Cross-Language Reconciliation & FFI Validation Suite', (
         .send({
           signature: 'valid-signature',
           publicKey: 'valid-key',
-          msg: giantMessage
+          msg: giantMessage,
         });
 
       expect(res.statusCode).toBe(400);
@@ -146,7 +152,7 @@ describe('Memory Safety Cross-Language Reconciliation & FFI Validation Suite', (
         .set('Cookie', [`accessToken=${organizerToken}`])
         .send({
           algorithm: 'RSA',
-          keySize: 256
+          keySize: 256,
         });
 
       expect(resLow.statusCode).toBe(400);
@@ -158,7 +164,7 @@ describe('Memory Safety Cross-Language Reconciliation & FFI Validation Suite', (
         .set('Cookie', [`accessToken=${organizerToken}`])
         .send({
           algorithm: 'RSA',
-          keySize: 16384
+          keySize: 16384,
         });
 
       expect(resHigh.statusCode).toBe(400);
@@ -173,7 +179,7 @@ describe('Memory Safety Cross-Language Reconciliation & FFI Validation Suite', (
         .set('Cookie', [`accessToken=${organizerToken}`])
         .send({
           algorithm: longAlgo,
-          keySize: 2048
+          keySize: 2048,
         });
 
       expect(res.statusCode).toBe(400);
@@ -189,7 +195,7 @@ describe('Memory Safety Cross-Language Reconciliation & FFI Validation Suite', (
         .set('Cookie', [`accessToken=${organizerToken}`])
         .send({
           algorithm: 'RSA',
-          keySize: 2048
+          keySize: 2048,
         });
 
       expect(keyGenRes.statusCode).toBe(200);
@@ -204,7 +210,7 @@ describe('Memory Safety Cross-Language Reconciliation & FFI Validation Suite', (
         .send({
           signature: 'VALID_MOCK_SIGNATURE',
           publicKey: 'mock-key',
-          msg: 'hello world'
+          msg: 'hello world',
         });
 
       expect(verifyRes.statusCode).toBe(200);
@@ -220,7 +226,7 @@ describe('Memory Safety Cross-Language Reconciliation & FFI Validation Suite', (
         .send({
           signature: 'CRASH_SEGFAULT',
           publicKey: 'mock-key',
-          msg: 'hello world'
+          msg: 'hello world',
         });
 
       // Assert that the request failed gracefully since the worker crashed
@@ -234,7 +240,7 @@ describe('Memory Safety Cross-Language Reconciliation & FFI Validation Suite', (
         .send({
           signature: 'VALID_MOCK_SIGNATURE',
           publicKey: 'mock-key',
-          msg: 'hello world'
+          msg: 'hello world',
         });
 
       expect(recoveryRes.statusCode).toBe(200);

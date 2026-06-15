@@ -1,9 +1,7 @@
 import request from 'supertest';
 import app from '../../src/app.js';
 import { validate, validateMultiple } from '../../src/middleware/validation.js';
-import { z } from 'zod';
 import { jest } from '@jest/globals';
-
 
 describe('Auth Integration Tests', () => {
   describe('POST /api/v1/auth/register', () => {
@@ -16,9 +14,7 @@ describe('Auth Integration Tests', () => {
         platform_role: 'organizer',
       };
 
-      const res = await request(app)
-        .post('/api/v1/auth/register')
-        .send(payload);
+      const res = await request(app).post('/api/v1/auth/register').send(payload);
 
       expect(res.statusCode).toBe(201);
       expect(res.body).toHaveProperty('success', true);
@@ -51,9 +47,7 @@ describe('Auth Integration Tests', () => {
         illegal_field: 'contamination_attempt', // Stripped/blocked
       };
 
-      const res = await request(app)
-        .post('/api/v1/auth/register')
-        .send(payload);
+      const res = await request(app).post('/api/v1/auth/register').send(payload);
 
       expect(res.statusCode).toBe(422);
       expect(res.body).toHaveProperty('success', false);
@@ -73,7 +67,7 @@ describe('Auth Integration Tests', () => {
   describe('Validation Middleware Unit Tests', () => {
     it('should cover validate success path', () => {
       const mockSchema = {
-        safeParse: (data) => ({ success: true, data })
+        safeParse: (data) => ({ success: true, data }),
       };
       const middleware = validate(mockSchema);
       const req = { body: { value: 'test' } };
@@ -93,44 +87,44 @@ describe('Auth Integration Tests', () => {
               {
                 path: [],
                 message: 'Empty path error',
-                code: 'custom'
+                code: 'custom',
               },
               {
                 path: ['field'],
                 message: 'Expected only error',
                 code: 'invalid_type',
-                expected: 'string'
+                expected: 'string',
               },
               {
                 path: ['another'],
                 message: 'Received only error',
                 code: 'invalid_type',
-                received: 'number'
+                received: 'number',
               },
               {
                 path: ['both'],
                 message: 'Both expected and received error',
                 code: 'invalid_type',
                 expected: 'string',
-                received: 'number'
-              }
-            ]
-          }
-        })
+                received: 'number',
+              },
+            ],
+          },
+        }),
       };
-      
+
       const middleware = validate(mockSchema, 'body');
       const req = { body: {} };
       const res = {
         status: jest.fn().mockReturnThis(),
-        json: jest.fn()
+        json: jest.fn(),
       };
       const next = jest.fn();
       middleware(req, res, next);
-      
+
       expect(res.status).toHaveBeenCalledWith(422);
       expect(res.json).toHaveBeenCalled();
-      
+
       const errors = res.json.mock.calls[0][0].errors;
       expect(errors[0].field).toBe('body'); // empty path fallback
       expect(errors[1].expected).toBe('string');
@@ -146,7 +140,7 @@ describe('Auth Integration Tests', () => {
       const mockSchema2 = { safeParse: (data) => ({ success: true, data }) };
       const middleware = validateMultiple([
         { schema: mockSchema1, source: 'body' },
-        { schema: mockSchema2, source: 'query' }
+        { schema: mockSchema2, source: 'query' },
       ]);
       const req = { body: { a: 1 }, query: { b: 2 } };
       const res = {};
@@ -165,34 +159,34 @@ describe('Auth Integration Tests', () => {
               {
                 path: [],
                 message: 'Multiple failure empty path',
-                code: 'custom'
+                code: 'custom',
               },
               {
                 path: ['nested', 'field'],
                 message: 'Multiple failure nested path',
-                code: 'custom'
-              }
-            ]
-          }
-        })
+                code: 'custom',
+              },
+            ],
+          },
+        }),
       };
-      
+
       const middleware = validateMultiple([
         { schema: mockSchema1, source: 'body' },
-        { schema: mockSchema2, source: 'query' }
+        { schema: mockSchema2, source: 'query' },
       ]);
-      
+
       const req = { body: { a: 1 }, query: {} };
       const res = {
         status: jest.fn().mockReturnThis(),
-        json: jest.fn()
+        json: jest.fn(),
       };
       const next = jest.fn();
       middleware(req, res, next);
-      
+
       expect(res.status).toHaveBeenCalledWith(422);
       expect(res.json).toHaveBeenCalled();
-      
+
       const errors = res.json.mock.calls[0][0].errors;
       expect(errors[0].field).toBe('query'); // fallback to source
       expect(errors[1].field).toBe('nested.field'); // join nested paths

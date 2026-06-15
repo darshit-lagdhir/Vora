@@ -55,7 +55,9 @@ describe('SSE Connection Stream Lifecycle Integration Tests', () => {
           expect(accumulated).toContain('event: message');
           expect(accumulated).toContain('data: ');
 
-          const dataLine = accumulated.split('\n').find((line) => line.startsWith('data: ') && line.includes('ATTENDEE_COUNT_MUTATED'));
+          const dataLine = accumulated
+            .split('\n')
+            .find((line) => line.startsWith('data: ') && line.includes('ATTENDEE_COUNT_MUTATED'));
           expect(dataLine).toBeDefined();
 
           const jsonData = JSON.parse(dataLine.substring(6));
@@ -77,7 +79,5 @@ describe('SSE Connection Stream Lifecycle Integration Tests', () => {
         });
       }, 200);
     });
-
   });
 });
-

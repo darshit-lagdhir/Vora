@@ -2,11 +2,13 @@ import { jest } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 import { rateLimiter } from '../../src/middleware/rateLimiter.js';
-import { blacklistInterceptor, getClientIp, isPrivateIp, banIp, isIpBlacklisted, registerRateLimitBreach } from '../../src/services/securityService.js';
 import {
-  setRedisPassThroughForTesting,
-  setMockClientForTesting
-} from '../../src/config/redis.js';
+  blacklistInterceptor,
+  getClientIp,
+  isPrivateIp,
+  registerRateLimitBreach,
+} from '../../src/services/securityService.js';
+import { setRedisPassThroughForTesting, setMockClientForTesting } from '../../src/config/redis.js';
 
 describe('Ingress Security & Rate Limiting Integration Suite', () => {
   let app;
@@ -26,7 +28,7 @@ describe('Ingress Security & Rate Limiting Integration Suite', () => {
       sAdd: jest.fn(),
       sRem: jest.fn(),
       zRangeWithScores: jest.fn(),
-      zRange: jest.fn()
+      zRange: jest.fn(),
     };
 
     setRedisPassThroughForTesting(false);
@@ -40,9 +42,13 @@ describe('Ingress Security & Rate Limiting Integration Suite', () => {
     app.use(blacklistInterceptor);
 
     // Setup dummy route under Critical Security (5 requests limit)
-    app.get('/login-test', rateLimiter({ limit: 5, windowMs: 60000, profileName: 'critical_security' }), (req, res) => {
-      res.status(200).json({ data: 'success' });
-    });
+    app.get(
+      '/login-test',
+      rateLimiter({ limit: 5, windowMs: 60000, profileName: 'critical_security' }),
+      (req, res) => {
+        res.status(200).json({ data: 'success' });
+      }
+    );
   });
 
   afterEach(() => {
@@ -64,8 +70,8 @@ describe('Ingress Security & Rate Limiting Integration Suite', () => {
     it('should extract the leftmost non-private IP signature from the chain', () => {
       const mockReq = {
         headers: {
-          'x-forwarded-for': '10.0.0.2, 192.168.1.50, 8.8.8.8, 127.0.0.1'
-        }
+          'x-forwarded-for': '10.0.0.2, 192.168.1.50, 8.8.8.8, 127.0.0.1',
+        },
       };
       // 8.8.8.8 is the first non-private IP in the chain from left
       expect(getClientIp(mockReq)).toBe('8.8.8.8');
@@ -80,12 +86,10 @@ describe('Ingress Security & Rate Limiting Integration Suite', () => {
         zCard: jest.fn().mockReturnThis(),
         zAdd: jest.fn().mockReturnThis(),
         expire: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue([0, 0, 1, 1]) // activeCount is 1
+        exec: jest.fn().mockResolvedValue([0, 0, 1, 1]), // activeCount is 1
       });
 
-      const res = await request(app)
-        .get('/login-test')
-        .set('X-Forwarded-For', '8.8.8.8');
+      const res = await request(app).get('/login-test').set('X-Forwarded-For', '8.8.8.8');
 
       expect(res.statusCode).toBe(200);
       expect(res.body.data).toBe('success');
@@ -95,9 +99,7 @@ describe('Ingress Security & Rate Limiting Integration Suite', () => {
       mockClient.sIsMember.mockResolvedValue(true);
       mockClient.exists.mockResolvedValue(1); // Expiration key exists
 
-      const res = await request(app)
-        .get('/login-test')
-        .set('X-Forwarded-For', '8.8.8.8');
+      const res = await request(app).get('/login-test').set('X-Forwarded-For', '8.8.8.8');
 
       expect(res.statusCode).toBe(403);
       expect(res.headers['connection']).toBe('close');
@@ -108,22 +110,20 @@ describe('Ingress Security & Rate Limiting Integration Suite', () => {
   describe('Rate Limiter Header & Sliding-Window Behavior', () => {
     it('should decrement remaining count and reject when limits are breached', async () => {
       mockClient.sIsMember.mockResolvedValue(false);
-      
+
       // Request count at 5 (which is the limit), next request count will be 6 (breach)
       mockClient.multi.mockReturnValue({
         zRemRangeByScore: jest.fn().mockReturnThis(),
         zCard: jest.fn().mockReturnThis(),
         zAdd: jest.fn().mockReturnThis(),
         expire: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue([0, 5, 1, 1]) // count = 5 before add, active = 6
+        exec: jest.fn().mockResolvedValue([0, 5, 1, 1]), // count = 5 before add, active = 6
       });
       // Mock oldest score timestamp inside sorted set (e.g. 50 seconds ago)
       mockClient.zRangeWithScores.mockResolvedValue([{ score: Date.now() - 50000, value: 'xyz' }]);
       mockClient.zRange.mockResolvedValue([]);
 
-      const res = await request(app)
-        .get('/login-test')
-        .set('X-Forwarded-For', '8.8.8.8');
+      const res = await request(app).get('/login-test').set('X-Forwarded-For', '8.8.8.8');
 
       expect(res.statusCode).toBe(429);
       expect(res.headers['x-ratelimit-limit']).toBe('5');
@@ -141,14 +141,11 @@ describe('Ingress Security & Rate Limiting Integration Suite', () => {
         expire: jest.fn().mockReturnThis(),
         sAdd: jest.fn().mockReturnThis(),
         set: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue([1, 1, 1])
+        exec: jest.fn().mockResolvedValue([1, 1, 1]),
       });
 
       // Mock breaches in last 10 minutes containing different profiles: 'critical_security' and 'public_read'
-      mockClient.zRange.mockResolvedValue([
-        'critical_security:uuid-1',
-        'public_read:uuid-2'
-      ]);
+      mockClient.zRange.mockResolvedValue(['critical_security:uuid-1', 'public_read:uuid-2']);
 
       await registerRateLimitBreach('9.9.9.9', 'public_read');
 
