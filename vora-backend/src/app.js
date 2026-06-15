@@ -115,8 +115,8 @@ const allowedOrigins = env.CORS_ORIGINS.split(',')
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // In development, allow requests with no origin (curl, Postman, mobile apps)
-    if (!origin && (env.NODE_ENV === 'development' || env.NODE_ENV === 'test')) {
+    // Allow requests with no origin (curl, Postman, internal health checks, server pings)
+    if (!origin) {
       return callback(null, true);
     }
 
