@@ -7,6 +7,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.resolve(__dirname, '../../../.env');
 dotenv.config({ path: envPath });
 
+// Enforce environment fallbacks in test mode to protect test execution
+if (process.env.NODE_ENV === 'test') {
+  process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5432/postgres';
+  process.env.REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+  process.env.JWT_SECRET = process.env.JWT_SECRET || 'be7333f3ddd09c754a5c0b1d793def4a32fd92194b65454328e80b84dcd06d3b24a8d1074b8a4db60338bf0af64ea3564b36dfe1107a6af11035de11ac2127be';
+  process.env.ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET;
+  process.env.REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET;
+  process.env.NATIVE_COMPILATION_SHIELD = process.env.NATIVE_COMPILATION_SHIELD || 'true';
+}
+
 const requiredKeys = ['DATABASE_URL', 'JWT_SECRET'];
 const missingKeys = [];
 
