@@ -252,12 +252,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 6. REQUEST LOGGING — Environment-aware Morgan configuration
-// ═══════════════════════════════════════════════════════════════════════════════
-if (env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-} else {
+if (env.NODE_ENV === 'production') {
   // Production structured access log format
   app.use(
     morgan(

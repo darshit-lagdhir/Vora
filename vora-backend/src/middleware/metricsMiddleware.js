@@ -10,14 +10,24 @@ export const metricsMiddleware = (req, res, next) => {
     const elapsedHrTime = process.hrtime(startHrTime);
     // Convert duration to milliseconds
     const durationMs = parseFloat((elapsedHrTime[0] * 1000 + elapsedHrTime[1] / 1e6).toFixed(3));
+    const statusCode = res.statusCode;
 
-    logger.info({
+    const logPayload = {
       module: 'metricsMiddleware.js',
       method: req.method,
       url: req.originalUrl || req.url,
-      statusCode: res.statusCode,
+      statusCode,
       durationMs
-    }, `HTTP Request: ${req.method} ${req.originalUrl || req.url} resolved with status ${res.statusCode} in ${durationMs}ms`);
+    };
+    const logMsg = `HTTP Request: ${req.method} ${req.originalUrl || req.url} resolved with status ${statusCode} in ${durationMs}ms`;
+
+    if (statusCode >= 500) {
+      logger.error(logPayload, logMsg);
+    } else if (statusCode >= 400) {
+      logger.warn(logPayload, logMsg);
+    } else if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'production') {
+      logger.info(logPayload, logMsg);
+    }
   });
 
   next();
