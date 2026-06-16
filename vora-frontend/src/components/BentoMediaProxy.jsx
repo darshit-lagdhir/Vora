@@ -127,7 +127,7 @@ export default function BentoMediaProxy({ url, title: initialTitle, mimeType, cl
   return (
     <div 
       onClick={handleOpen}
-      className={`group relative overflow-hidden rounded-2xl border border-white/5 cursor-pointer shadow-soft hover:border-primary-500/30 transition-all duration-300 flex flex-col min-h-[160px] ${className}`}
+      className={`group bento-gradient-card relative overflow-hidden rounded-2xl border border-white/5 cursor-pointer shadow-soft hover:border-primary-500/30 transition-all duration-300 flex flex-col min-h-[160px] ${className}`}
       style={{
         backgroundImage: 'radial-gradient(circle at 10% 20%, rgba(124, 58, 237, 0.12) 0%, transparent 60%), radial-gradient(circle at 90% 80%, rgba(24, 24, 27, 0.9) 0%, #09090b 100%)',
         backgroundColor: '#09090b'

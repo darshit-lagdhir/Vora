@@ -36,6 +36,14 @@
     />
 
     <title>Vora - Premium Virtual Event Hosting & Management Ecosystem</title>
+    <script>
+      (function () {
+        const theme = localStorage.getItem('vora-theme') || 'dark';
+        if (theme === 'light') {
+          document.documentElement.classList.add('light');
+        }
+      })();
+    </script>
   </head>
   <body class="bg-brand-dark text-slate-100">
     <div id="root">

@@ -5,6 +5,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default {
+  darkMode: 'class',
   content: [
     path.resolve(__dirname, "./index.html"),
     path.resolve(__dirname, "./src/**/*.{js,ts,jsx,tsx}"),
@@ -12,21 +13,30 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Deep Zinc Color Matrix
+        // Deep Zinc Color Matrix mapped to theme-dependent CSS variables
         zinc: {
-          950: "#09090b",
-          900: "#18181b",
+          50: "rgb(var(--zinc-50-rgb) / <alpha-value>)",
+          100: "rgb(var(--zinc-100-rgb) / <alpha-value>)",
+          200: "rgb(var(--zinc-200-rgb) / <alpha-value>)",
+          300: "rgb(var(--zinc-300-rgb) / <alpha-value>)",
+          400: "rgb(var(--zinc-400-rgb) / <alpha-value>)",
+          500: "rgb(var(--zinc-500-rgb) / <alpha-value>)",
+          600: "rgb(var(--zinc-600-rgb) / <alpha-value>)",
+          700: "rgb(var(--zinc-700-rgb) / <alpha-value>)",
+          800: "rgb(var(--zinc-800-rgb) / <alpha-value>)",
+          900: "rgb(var(--zinc-900-rgb) / <alpha-value>)",
+          950: "rgb(var(--zinc-950-rgb) / <alpha-value>)",
         },
         background: {
-          root: "#09090B",   // Zinc 950 for root backdrop
-          elevated: "#18181B", // Zinc 900 for cards, headers, panels
+          root: "rgb(var(--bg-root-rgb) / <alpha-value>)",   // Dynamic root backdrop
+          elevated: "rgb(var(--bg-elevated-rgb) / <alpha-value>)", // Dynamic elevated cards, headers, panels
         },
         // Premium brand color aliases using the zinc theme
         brand: {
-          dark: "#09090B",
-          slate: "#18181B",
-          card: "#27272A", // Zinc 800 for nested components
-          muted: "#A1A1AA", // Zinc 400
+          dark: "rgb(var(--brand-dark-rgb) / <alpha-value>)",
+          slate: "rgb(var(--brand-slate-rgb) / <alpha-value>)",
+          card: "rgb(var(--brand-card-rgb) / <alpha-value>)", // Dynamic card bg
+          muted: "rgb(var(--brand-muted-rgb) / <alpha-value>)",
         },
         // Custom vibrant primary Violet color token scale
         primary: {
@@ -51,7 +61,7 @@ export default {
         },
         // Subtle borders and dividers
         border: {
-          subtle: "#27272A", // Zinc 800
+          subtle: "rgb(var(--border-subtle-rgb) / <alpha-value>)",
         },
         // Semantic statuses
         status: {

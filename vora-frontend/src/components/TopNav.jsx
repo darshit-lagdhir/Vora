@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Menu, Search, Bell, Clock, Activity } from 'lucide-react';
+import { Menu, Search, Bell, Clock, Activity, Sun, Moon } from 'lucide-react';
 import BrutalistButton from './BrutalistButton.jsx';
+import { useTheme } from '../context/ThemeContext.jsx';
 
 /**
  * Premium Contextual Top Navigation header bar conforming to the "5/10 Awwwards" style.
  * Remains sticky at the top, frosted with a backdrop blur, and maps location context dynamically.
  */
 export default function TopNav({ onOpenMobileMenu, user, tasks = [], onOpenQueue }) {
+  const { toggleTheme, isDark } = useTheme();
   const location = useLocation();
   const [systemTime, setSystemTime] = useState('');
 
@@ -93,6 +95,20 @@ export default function TopNav({ onOpenMobileMenu, user, tasks = [], onOpenQueue
             <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary-500 ring-2 ring-zinc-950" />
           </BrutalistButton>
         </div>
+
+        {/* Theme Toggle Button */}
+        <BrutalistButton
+          variant="ghost"
+          onClick={toggleTheme}
+          className="p-2 text-zinc-450 hover:text-zinc-100 hover:bg-zinc-900/50 rounded-lg flex items-center justify-center relative cursor-pointer outline-none animate-[fadeIn_0.2s_ease-out]"
+          aria-label="Toggle visual theme"
+        >
+          {isDark ? (
+            <Sun className="w-4 h-4 transition-transform duration-500 hover:rotate-45" />
+          ) : (
+            <Moon className="w-4 h-4 transition-transform duration-500 hover:-rotate-12" />
+          )}
+        </BrutalistButton>
 
         {/* Mini profile avatar trigger */}
         <div className="h-6 w-px bg-zinc-800" />

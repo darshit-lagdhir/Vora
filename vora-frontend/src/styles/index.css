@@ -77,14 +77,112 @@
 
 
 @layer base {
+  :root {
+    --zinc-50-rgb: 250, 250, 250;
+    --zinc-100-rgb: 244, 244, 245;
+    --zinc-200-rgb: 228, 228, 230;
+    --zinc-300-rgb: 212, 212, 216;
+    --zinc-400-rgb: 161, 161, 170;
+    --zinc-500-rgb: 113, 113, 122;
+    --zinc-600-rgb: 82, 82, 91;
+    --zinc-700-rgb: 63, 63, 70;
+    --zinc-800-rgb: 39, 39, 42;
+    --zinc-900-rgb: 24, 24, 27;
+    --zinc-950-rgb: 9, 9, 11;
+
+    --bg-root-rgb: 9, 9, 11;
+    --bg-elevated-rgb: 24, 24, 27;
+    
+    --brand-dark-rgb: 9, 9, 11;
+    --brand-slate-rgb: 24, 24, 27;
+    --brand-card-rgb: 39, 39, 42;
+    --brand-muted-rgb: 161, 161, 170;
+
+    --border-subtle-rgb: 39, 39, 42;
+  }
+
+  .light {
+    --zinc-50-rgb: 9, 9, 11;
+    --zinc-100-rgb: 24, 24, 27;
+    --zinc-200-rgb: 39, 39, 42;
+    --zinc-300-rgb: 63, 63, 70;
+    --zinc-400-rgb: 82, 82, 91;
+    --zinc-500-rgb: 113, 113, 122;
+    --zinc-600-rgb: 161, 161, 170;
+    --zinc-700-rgb: 212, 212, 216;
+    --zinc-800-rgb: 228, 228, 230;
+    --zinc-900-rgb: 244, 244, 245;
+    --zinc-950-rgb: 250, 250, 250;
+
+    --bg-root-rgb: 250, 250, 250;
+    --bg-elevated-rgb: 255, 255, 255;
+
+    --brand-dark-rgb: 255, 255, 255;
+    --brand-slate-rgb: 244, 244, 245;
+    --brand-card-rgb: 228, 228, 230;
+    --brand-muted-rgb: 82, 82, 91;
+
+    --border-subtle-rgb: 228, 228, 230;
+  }
+
   html {
     text-rendering: optimizeLegibility;
   }
 
   html, body {
-    background-color: theme('colors.zinc.950');
-    color: theme('colors.zinc.200');
+    background-color: rgb(var(--bg-root-rgb));
+    color: rgb(var(--zinc-200-rgb));
     font-family: 'Syne', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+
+  /* Automatic text-white adaptation under light theme */
+  .light .text-white {
+    color: rgb(var(--zinc-100-rgb)) !important;
+  }
+
+  /* Retain true white text for elements with solid-colored layouts in light theme */
+  .light button.text-white,
+  .light button .text-white,
+  .light .btn,
+  .light .btn .text-white,
+  .light [role="button"],
+  .light [role="button"] .text-white,
+  .light .bg-primary-500,
+  .light .bg-primary-600,
+  .light .bg-primary-700,
+  .light .bg-primary-800,
+  .light .bg-primary-900,
+  .light .bg-accent-violet,
+  .light .bg-status-success,
+  .light .bg-status-danger,
+  .light .bg-status-warning,
+  .light .bg-rose-600,
+  .light .bg-red-600,
+  .light .bg-emerald-600,
+  .light .bg-green-600,
+  .light .text-white-always {
+    color: #ffffff !important;
+  }
+
+  /* Handle white border overrides to use dynamic border scale in light mode */
+  .light .border-white\/5,
+  .light .border-white\/10,
+  .light .border-white\/20 {
+    border-color: rgba(var(--zinc-50-rgb), 0.08) !important;
+  }
+
+  .light .text-slate-100 {
+    color: rgb(var(--zinc-100-rgb)) !important;
+  }
+  .light .text-slate-200 {
+    color: rgb(var(--zinc-200-rgb)) !important;
+  }
+  .light .text-slate-300 {
+    color: rgb(var(--zinc-300-rgb)) !important;
+  }
+  .light .text-slate-400 {
+    color: rgb(var(--zinc-400-rgb)) !important;
   }
 
   body {
@@ -160,12 +258,20 @@
 
 @layer utilities {
   .soft-glass {
-    background-color: rgba(24, 24, 27, 0.4);
+    background-color: rgba(var(--bg-elevated-rgb), 0.4);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-top-color: rgba(255, 255, 255, 0.18);
     box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+
+  .light .soft-glass {
+    background-color: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(9, 9, 11, 0.08);
+    border-top-color: rgba(9, 9, 11, 0.15);
+    box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6), 0 10px 15px -3px rgba(0, 0, 0, 0.05);
   }
 
   .neon-diffuse {
@@ -175,4 +281,26 @@
   .focus-neon-diffuse:focus {
     box-shadow: 0 0 60px -15px rgba(139, 92, 246, 0.4) !important;
   }
+}
+
+/* Additional premium light-theme overrides */
+.light .glass-navbar.scrolled {
+  background-color: rgb(var(--bg-root-rgb)) !important;
+  border-bottom: 1px solid rgba(var(--zinc-50-rgb), 0.1) !important;
+}
+
+.light .bento-gradient-card {
+  background-image: radial-gradient(circle at 10% 20%, rgba(124, 58, 237, 0.08) 0%, transparent 60%), radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.9) 0%, rgb(var(--bg-root-rgb)) 100%) !important;
+  background-color: rgb(var(--bg-root-rgb)) !important;
+}
+
+.light .progressive-image-placeholder {
+  background-image: radial-gradient(circle at 30% 20%, rgba(124, 58, 237, 0.1) 0%, transparent 60%), radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.9) 0%, rgb(var(--bg-root-rgb)) 100%) !important;
+  background-color: rgb(var(--bg-root-rgb)) !important;
+}
+
+.light .procedural-bg {
+  background-image: radial-gradient(circle at 15% 20%, rgba(124, 58, 237, 0.1) 0%, transparent 40%),
+                    radial-gradient(circle at 85% 80%, rgba(99, 102, 241, 0.05) 0%, transparent 45%),
+                    linear-gradient(135deg, rgb(var(--zinc-950-rgb)) 0%, rgb(var(--zinc-900-rgb)) 100%) !important;
 }

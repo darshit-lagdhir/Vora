@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useTheme } from '../../context/ThemeContext.jsx';
 
 /**
  * Global floating pill NavBar conforming to the Awwwards aesthetic.
@@ -11,6 +12,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 export default function NavBar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { toggleTheme, isDark } = useTheme();
 
   const handleLogout = async () => {
     await logout();
@@ -56,6 +58,20 @@ export default function NavBar() {
 
         {/* Authentication Gateway triggers */}
         <div className="flex items-center gap-3">
+          <motion.button
+            type="button"
+            onClick={toggleTheme}
+            whileTap={{ scale: 0.95 }}
+            className="p-2 rounded-full bg-zinc-900/30 border border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-100 transition-all cursor-pointer outline-none flex items-center justify-center shrink-0"
+            aria-label="Toggle visual theme"
+          >
+            {isDark ? (
+              <Sun className="w-4 h-4 transition-transform duration-500 hover:rotate-45" />
+            ) : (
+              <Moon className="w-4 h-4 transition-transform duration-500 hover:-rotate-12" />
+            )}
+          </motion.button>
+
           {user ? (
             <>
               <Link 

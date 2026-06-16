@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
+import { ThemeProvider } from './context/ThemeContext.jsx';
 import { AnimatePresence } from 'framer-motion';
 import Layout from './components/Layout.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
@@ -212,14 +213,16 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <Router>
-        <ScrollToTop />
-        <ErrorBoundary>
-          <AppContent />
-        </ErrorBoundary>
-      </Router>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <ScrollToTop />
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

@@ -66,7 +66,7 @@ export default function ProgressiveImage({
     // Default fallback is a gorgeous radial mesh gradient preserving layout dimensions
     return (
       <div 
-        className={`w-full h-full ${aspectClass} ${className} relative overflow-hidden bg-zinc-950 border border-white/5`} 
+        className={`w-full h-full progressive-image-placeholder ${aspectClass} ${className} relative overflow-hidden bg-zinc-950 border border-white/5`} 
         style={{
           backgroundImage: 'radial-gradient(circle at 30% 20%, rgba(124, 58, 237, 0.18) 0%, transparent 60%), radial-gradient(circle at 80% 80%, rgba(24, 24, 27, 0.9) 0%, #09090b 100%)',
         }}
