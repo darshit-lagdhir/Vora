@@ -57,8 +57,17 @@ apiClient.interceptors.response.use(
         console.error('[Network Engine] Error removing token from local storage:', err);
       }
       
-      if (typeof window !== 'undefined' && window.location.pathname !== '/auth') {
-        window.location.href = '/auth?expired=true';
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname;
+        const isPublic =
+          path === '/' ||
+          path === '/auth' ||
+          path === '/onboarding' ||
+          (path.startsWith('/event/') && !path.endsWith('/live') && !path.endsWith('/vault'));
+
+        if (!isPublic) {
+          window.location.href = '/auth?expired=true';
+        }
       }
       return Promise.reject(error);
     }
