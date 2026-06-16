@@ -84,7 +84,7 @@ export default function NavBar() {
                 type="button" 
                 onClick={handleLogout}
                 whileTap={{ scale: 0.98 }}
-                className="bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-bold font-brutalist uppercase tracking-wider px-5 py-2.5 rounded-full transition-all neon-diffuse cursor-pointer outline-none border-none"
+                className="bg-white hover:bg-zinc-200 text-black text-xs font-bold font-brutalist uppercase tracking-wider px-5 py-2.5 rounded-full transition-all neon-diffuse cursor-pointer outline-none border-none"
               >
                 Sign Out
               </motion.button>
@@ -101,7 +101,7 @@ export default function NavBar() {
                 <motion.button
                   type="button" 
                   whileTap={{ scale: 0.98 }}
-                  className="bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-bold font-brutalist uppercase tracking-wider px-5 py-2.5 rounded-full transition-all neon-diffuse cursor-pointer outline-none border-none"
+                  className="bg-white hover:bg-zinc-200 text-black text-xs font-bold font-brutalist uppercase tracking-wider px-5 py-2.5 rounded-full transition-all neon-diffuse cursor-pointer outline-none border-none"
                 >
                   Get Started
                 </motion.button>

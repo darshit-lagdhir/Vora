@@ -119,10 +119,10 @@ export default function Hero() {
             <motion.button
               type="button" 
               whileTap={{ scale: 0.98 }}
-              className="group w-full sm:w-auto bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-bold font-brutalist uppercase tracking-wider px-5 py-2.5 rounded-full flex items-center justify-center gap-2 transition-all neon-diffuse cursor-pointer outline-none border-none"
+              className="group w-full sm:w-auto bg-white hover:bg-zinc-200 text-black text-xs font-bold font-brutalist uppercase tracking-wider px-5 py-2.5 rounded-full flex items-center justify-center gap-2 transition-all neon-diffuse cursor-pointer outline-none border-none"
             >
               <span>START BUILDING FREE</span>
-              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 shrink-0 text-zinc-950" />
+              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 shrink-0 text-black" />
             </motion.button>
           </Link>
           
