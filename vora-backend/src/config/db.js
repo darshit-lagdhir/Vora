@@ -15,7 +15,7 @@ const pool = new Pool({
   max: 50,                  // Maximum number of clients in the pool (optimized for high throughput)
   min: 5,                   // Maintain a baseline of 5 warm connections
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 5000, // Return an error after 5 seconds if connection fails
+  connectionTimeoutMillis: 30000, // Return an error after 30 seconds if connection fails
 });
 
 export let isOffline = process.env.NODE_ENV === 'test';
